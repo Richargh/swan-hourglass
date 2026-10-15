@@ -19,6 +19,12 @@ const content = {
     changing: 'Changing',
     using: 'Using',
   },
+  decisionNames: {
+    align: { team: 'Define', outside: 'Align' },
+    bet: { team: 'Bet', outside: 'Pitch' },
+    release: { team: 'Release', outside: 'Handoff' },
+    listen: { team: 'Listen', outside: 'Briefed' },
+  },
   transitions: {
     align: 'Align',
     bet: 'Bet',
@@ -197,7 +203,7 @@ class SwanHourglass extends HTMLElement {
           ${this.controls('Transitions', transitions)}
           <div role="group" aria-label="Transition decision authority">
             <div class="control-heading"><h2>Decision</h2></div>
-            <div class="buttons">${Object.entries(arrowStyles).map(([id, style]) => `<button type="button" data-arrow="${id}" aria-pressed="${style.defaultCurved}" aria-label="Outside decision for ${escapeText(content.transitions[id])}">${escapeText(content.transitions[id])}: ${style.defaultCurved ? 'Outside' : 'Team'}</button>`).join('')}</div>
+            <div class="buttons">${Object.entries(arrowStyles).map(([id, style]) => `<button type="button" data-arrow="${id}" aria-pressed="${style.defaultCurved}" aria-label="Outside decision for ${escapeText(content.transitions[id])}">${escapeText(content.decisionNames[id][style.defaultCurved ? 'outside' : 'team'])}: ${style.defaultCurved ? 'Outside' : 'Team'}</button>`).join('')}</div>
             <p class="hint">Team: straight arrow. Outside: outward arrow.</p>
           </div>
           <p class="hint">Toggle any element to explore the model. The quadrants stay visible.</p>
@@ -251,7 +257,12 @@ class SwanHourglass extends HTMLElement {
           layer.querySelector('text').setAttribute('x', String(textX));
         }
         button.setAttribute('aria-pressed', String(curved));
-        button.textContent = `${content.transitions[id]}: ${curved ? 'Outside' : 'Team'}`;
+        const name = content.decisionNames[id][curved ? 'outside' : 'team'];
+        layer.querySelector('text').textContent = name;
+        const visibilityButton = root.querySelector(`[data-item="${id}"]`);
+        visibilityButton.textContent = name;
+        visibilityButton.setAttribute('aria-label', `Show ${name}`);
+        button.textContent = `${name}: ${curved ? 'Outside' : 'Team'}`;
       } else if (button.dataset.item) {
         this.setVisible(button.dataset.item, button.getAttribute('aria-pressed') !== 'true');
       } else {
