@@ -54,8 +54,8 @@ const arrowStyles = {
     defaultCurved: true,
   },
   release: {
-    straight: 'M455 632 H425',
-    curved: 'M455 632 V656 C455 680 425 680 425 656 V632',
+    straight: 'M455 616 H425',
+    curved: 'M455 616 V640 C455 664 425 664 425 640 V616',
     defaultCurved: false,
   },
   listen: {
@@ -87,7 +87,8 @@ class SwanHourglass extends HTMLElement {
         .space { font-size: 19px; font-weight: 700; }
         .pole { font-size: 18px; font-weight: 600; }
         .ring { fill: none; stroke: #7162c9; stroke-width: 13; }
-        .activity-label { font-size: 20px; font-weight: 600; }
+        .activity rect { fill: #7162c9; }
+        .activity-label { fill: white; font-size: 17px; font-weight: 650; }
         .transition path { fill: none; stroke: #e9008f; stroke-width: 5; }
         .transition rect { fill: #e9008f; }
         .transition text { fill: white; font-size: 17px; font-weight: 650; }
@@ -133,8 +134,8 @@ class SwanHourglass extends HTMLElement {
           </defs>
           <path data-quadrant="top-left" clip-path="url(#clip-top-left)" d="M440 111.072 A132 132 0 1 0 389.657 370 H440 Z" fill="#f0edff" />
           <path data-quadrant="top-right" clip-path="url(#clip-top-right)" d="M440 111.072 A132 132 0 1 1 490.343 370 H440 Z" fill="#ecefff" />
-          <path data-quadrant="bottom-left" clip-path="url(#clip-bottom-left)" d="M440 645.137 A140 140 0 1 1 389.061 370 H440 Z" fill="#f5f2ff" />
-          <path data-quadrant="bottom-right" clip-path="url(#clip-bottom-right)" d="M440 645.137 A140 140 0 1 0 490.939 370 H440 Z" fill="#f0f3ff" />
+          <path data-quadrant="bottom-left" clip-path="url(#clip-bottom-left)" d="M440 628.928 A132 132 0 1 1 389.657 370 H440 Z" fill="#f5f2ff" />
+          <path data-quadrant="bottom-right" clip-path="url(#clip-bottom-right)" d="M440 628.928 A132 132 0 1 0 490.343 370 H440 Z" fill="#f0f3ff" />
           <path class="axis" d="M440 50V690 M150 370H730" />
           <text class="pole" x="440" y="19">${escapeText(content.poles.top)}</text>
           <text class="pole" x="440" y="748">${escapeText(content.poles.bottom)}</text>
@@ -144,19 +145,23 @@ class SwanHourglass extends HTMLElement {
           <g class="hourglass" transform="translate(0 -10)">
           <g data-layer="learning" class="activity">
             <path class="ring" d="M394 355 A106.633 106.633 0 0 1 425 144" />
-            <text class="activity-label" x="235" y="238">${escapeText(content.activities.learning)}</text>
+            <rect x="179" y="234" width="112" height="31" rx="6" />
+            <text class="activity-label" x="235" y="249.5">${escapeText(content.activities.learning)}</text>
           </g>
           <g data-layer="distilling" class="activity">
             <path class="ring" d="M455 144 A106.633 106.633 0 0 1 486 355" />
-            <text class="activity-label" x="645" y="238">${escapeText(content.activities.distilling)}</text>
+            <rect x="589" y="234" width="112" height="31" rx="6" />
+            <text class="activity-label" x="645" y="249.5">${escapeText(content.activities.distilling)}</text>
           </g>
           <g data-layer="using" class="activity">
-            <path class="ring" d="M425 632 A114.554 114.554 0 0 1 394 405" />
-            <text class="activity-label" x="235" y="523">${escapeText(content.activities.using)}</text>
+            <path class="ring" d="M425 616 A106.633 106.633 0 0 1 394 405" />
+            <rect x="179" y="495" width="112" height="31" rx="6" />
+            <text class="activity-label" x="235" y="510.5">${escapeText(content.activities.using)}</text>
           </g>
           <g data-layer="changing" class="activity">
-            <path class="ring" d="M486 405 A114.554 114.554 0 0 1 455 632" />
-            <text class="activity-label" x="645" y="523">${escapeText(content.activities.changing)}</text>
+            <path class="ring" d="M486 405 A106.633 106.633 0 0 1 455 616" />
+            <rect x="589" y="495" width="112" height="31" rx="6" />
+            <text class="activity-label" x="645" y="510.5">${escapeText(content.activities.changing)}</text>
           </g>
 
           <g data-layer="align" class="transition">
@@ -171,8 +176,8 @@ class SwanHourglass extends HTMLElement {
           </g>
           <g data-layer="release" class="transition">
             <path d="${arrowStyles.release.straight}" marker-end="url(#pink-arrow)" />
-            <rect x="389" y="686" width="102" height="31" rx="6" />
-            <text x="440" y="702">${escapeText(content.transitions.release)}</text>
+            <rect x="389" y="670" width="102" height="31" rx="6" />
+            <text x="440" y="686">${escapeText(content.transitions.release)}</text>
           </g>
           <g data-layer="listen" class="transition">
             <path d="${arrowStyles.listen.straight}" marker-end="url(#pink-arrow)" />
@@ -221,8 +226,8 @@ class SwanHourglass extends HTMLElement {
         : {
           'top-left': 'M440 111.072 A132 132 0 1 0 389.657 370 H440 Z',
           'top-right': 'M440 111.072 A132 132 0 1 1 490.343 370 H440 Z',
-          'bottom-left': 'M440 645.137 A140 140 0 1 1 389.061 370 H440 Z',
-          'bottom-right': 'M440 645.137 A140 140 0 1 0 490.939 370 H440 Z',
+          'bottom-left': 'M440 628.928 A132 132 0 1 1 389.657 370 H440 Z',
+          'bottom-right': 'M440 628.928 A132 132 0 1 0 490.343 370 H440 Z',
         };
       for (const background of root.querySelectorAll('[data-quadrant]')) {
         background.setAttribute('d', paths[background.dataset.quadrant]);
