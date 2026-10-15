@@ -5,6 +5,10 @@ const content = {
   licenseUrl: 'https://creativecommons.org/licenses/by-sa/4.0/',
   title: '(Black) Swan Hourglass',
   description: 'Problem space on the left, solution space on the right; idea space above, decision space below. Learning and distilling form the upper ring. Using and changing form the lower ring. Align, bet, release, listen, and validate connect the activities.',
+  legend: {
+    rightThing: 'build the right thing',
+    thingRight: 'build the thing right',
+  },
   poles: {
     top: 'Idea Space',
     bottom: 'Decision Space',
@@ -88,6 +92,9 @@ class SwanHourglass extends HTMLElement {
         .pole { font-size: 18px; font-weight: 600; }
         .ring { fill: none; stroke: #7162c9; stroke-width: 13; }
         .activity rect { fill: #7162c9; }
+        [data-layer="changing"] .ring { stroke: #0030FF; }
+        [data-layer="changing"] rect { fill: #0030FF; }
+        .legend text { fill: white; font-size: 18px; font-weight: 650; }
         .activity-label { fill: white; font-size: 17px; font-weight: 650; }
         .transition path { fill: none; stroke: #e9008f; stroke-width: 5; }
         .transition rect { fill: #e9008f; }
@@ -120,7 +127,7 @@ class SwanHourglass extends HTMLElement {
         }
       </style>
       <section class="card" aria-label="Interactive Swan Hourglass">
-        <svg viewBox="0 -20 880 790" role="img" aria-labelledby="diagram-title diagram-description">
+        <svg viewBox="0 -20 880 880" role="img" aria-labelledby="diagram-title diagram-description">
           <title id="diagram-title">${escapeText(content.title)}</title>
           <desc id="diagram-description">${escapeText(content.description)}</desc>
           <metadata><rdf:RDF xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#" xmlns:cc="http://creativecommons.org/ns#"><cc:Work rdf:about=""><cc:license rdf:resource="${escapeText(content.licenseUrl)}" /></cc:Work></rdf:RDF></metadata>
@@ -189,6 +196,12 @@ class SwanHourglass extends HTMLElement {
             <rect x="386" y="291" width="108" height="31" rx="6" />
             <text x="440" y="307">${escapeText(content.transitions.validate)}</text>
           </g>
+          </g>
+          <g class="legend" aria-label="Activity colors">
+            <rect x="160" y="790" width="260" height="40" rx="6" fill="#7162c9" />
+            <text x="290" y="810">${escapeText(content.legend.rightThing)}</text>
+            <rect x="460" y="790" width="260" height="40" rx="6" fill="#0030FF" />
+            <text x="590" y="810">${escapeText(content.legend.thingRight)}</text>
           </g>
         </svg>
         <div class="controls">
