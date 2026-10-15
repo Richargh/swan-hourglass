@@ -35,6 +35,11 @@ class SwanHourglass extends HTMLElement {
         button:hover { filter: brightness(.96); }
         button:focus-visible { outline: 3px solid #7263cb; outline-offset: 3px; }
         .group-toggle { padding: 4px 8px; border-color: transparent; color: #65539f; }
+        .gap-control { display: grid; gap: 10px; }
+        .gap-label { display: flex; justify-content: space-between; font-size: .85rem; }
+        output { font-variant-numeric: tabular-nums; color: #68627e; }
+        input[type="range"] { width: 100%; margin: 0; accent-color: #7162c9; }
+        input:focus-visible { outline: 3px solid #7263cb; outline-offset: 3px; }
         .hint { margin: 0; font-size: .8rem; color: #777187; }
         @media (max-width: 500px) { .controls { padding: 16px; } }
       </style>
@@ -46,10 +51,10 @@ class SwanHourglass extends HTMLElement {
             <marker id="pink-arrow" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="4" markerHeight="4" orient="auto-start-reverse"><path d="M 0 0 L 10 5 L 0 10 Z" fill="#e9008f" /></marker>
             <marker id="green-arrow" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="4" markerHeight="4" orient="auto"><path d="M 0 0 L 10 5 L 0 10 Z" fill="#00a968" /></marker>
           </defs>
-          <rect x="150" y="50" width="290" height="320" fill="#f0edff" />
-          <rect x="440" y="50" width="290" height="320" fill="#ecefff" />
-          <rect x="150" y="370" width="290" height="320" fill="#f5f2ff" />
-          <rect x="440" y="370" width="290" height="320" fill="#f0f3ff" />
+          <rect data-quadrant="top-left" transform="translate(-5 -5)" x="150" y="50" width="290" height="320" fill="#f0edff" />
+          <rect data-quadrant="top-right" transform="translate(5 -5)" x="440" y="50" width="290" height="320" fill="#ecefff" />
+          <rect data-quadrant="bottom-left" transform="translate(-5 5)" x="150" y="370" width="290" height="320" fill="#f5f2ff" />
+          <rect data-quadrant="bottom-right" transform="translate(5 5)" x="440" y="370" width="290" height="320" fill="#f0f3ff" />
           <path class="axis" d="M440 50V690 M150 370H730" />
           <text class="pole" x="440" y="19">Idea</text>
           <text class="pole" x="440" y="718">Decision</text>
@@ -102,12 +107,27 @@ class SwanHourglass extends HTMLElement {
           </g>
         </svg>
         <div class="controls">
+          <div class="gap-control">
+            <div class="gap-label"><label for="box-gap">Box gap</label><output for="box-gap" id="gap-value">10</output></div>
+            <input id="box-gap" type="range" min="0" max="50" step="5" value="10" aria-describedby="gap-hint">
+            <p class="hint" id="gap-hint">Spacing between boxes in SVG units. The hourglass stays fixed.</p>
+          </div>
           ${this.controls('Activities', activities)}
           ${this.controls('Transitions', transitions)}
           <p class="hint">Toggle any element to explore the model. The quadrants stay visible.</p>
         </div>
       </section>
     `;
+    root.querySelector('#box-gap').addEventListener('input', event => {
+      const gap = Number(event.target.value);
+      const offset = gap / 2;
+      for (const box of root.querySelectorAll('[data-quadrant]')) {
+        const x = box.dataset.quadrant.endsWith('left') ? -offset : offset;
+        const y = box.dataset.quadrant.startsWith('top') ? -offset : offset;
+        box.setAttribute('transform', `translate(${x} ${y})`);
+      }
+      root.querySelector('#gap-value').value = String(gap);
+    });
     root.addEventListener('click', event => {
       const button = event.target.closest('button');
       if (!button) return;
