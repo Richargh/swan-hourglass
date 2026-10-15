@@ -4,7 +4,7 @@ const content = {
   license: 'CC-BY-SA-4.0',
   licenseUrl: 'https://creativecommons.org/licenses/by-sa/4.0/',
   title: '(Black) Swan Hourglass',
-  description: 'Problem space on the left, solution space on the right; idea space above, decision space below. Learning and distilling form the upper ring. Using and changing form the lower ring. Align, bet, release, listen, and validate connect the activities.',
+  description: 'Problem space on the left, solution space on the right; idea space above, decision space below. Learning and distilling form the upper ring. Using and changing form the lower ring. Align, bet, release, listen, and probe connect the activities.',
   legend: {
     rightThing: 'build the right thing',
     thingRight: 'build the thing right',
@@ -34,7 +34,7 @@ const content = {
     bet: 'Bet',
     release: 'Release',
     listen: 'Listen',
-    validate: 'Validate',
+    probe: 'Probe',
   },
 };
 
@@ -99,8 +99,8 @@ class SwanHourglass extends HTMLElement {
         .transition path { fill: none; stroke: #e9008f; stroke-width: 5; }
         .transition rect { fill: #e9008f; }
         .transition text { fill: white; font-size: 17px; font-weight: 650; }
-        .validate path { stroke: #00a968; }
-        .validate rect { fill: #00a968; }
+        .probe path { stroke: #00a968; }
+        .probe rect { fill: #00a968; }
         [hidden] { display: none !important; }
         .controls { grid-column: 1; grid-row: 1; align-self: stretch; align-content: start; min-width: 0; border-right: 1px solid #e1dfeb; padding: 20px; display: grid; gap: 22px; }
         .control-heading { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-bottom: 10px; }
@@ -109,7 +109,7 @@ class SwanHourglass extends HTMLElement {
         button { font: inherit; cursor: pointer; border: 1px solid #dcd8eb; border-radius: 8px; background: white; color: #68627e; padding: 8px 13px; font-size: .85rem; }
         button[aria-pressed="true"] { background: #f0ecff; border-color: #a99cde; color: #4a358d; }
         button[data-kind="transitions"][aria-pressed="true"] { background: #fff0f8; border-color: #ef9bce; color: #ac006a; }
-        button[data-item="validate"][aria-pressed="true"] { background: #eafaef; border-color: #81cfa9; color: #007847; }
+        button[data-item="probe"][aria-pressed="true"] { background: #eafaef; border-color: #81cfa9; color: #007847; }
         button:hover { filter: brightness(.96); }
         button:focus-visible { outline: 3px solid #7263cb; outline-offset: 3px; }
         .group-toggle { padding: 4px 8px; border-color: transparent; color: #65539f; }
@@ -191,10 +191,10 @@ class SwanHourglass extends HTMLElement {
             <rect x="299" y="364.5" width="76" height="31" rx="6" />
             <text x="337" y="380">${escapeText(content.transitions.listen)}</text>
           </g>
-          <g data-layer="validate" class="transition validate">
+          <g data-layer="probe" class="transition probe">
             <path d="M486 355 C455.333 359.505 424.667 359.505 394 355" marker-end="url(#green-arrow)" />
             <rect x="386" y="291" width="108" height="31" rx="6" />
-            <text x="440" y="307">${escapeText(content.transitions.validate)}</text>
+            <text x="440" y="307">${escapeText(content.transitions.probe)}</text>
           </g>
           </g>
           <g class="legend" aria-label="Activity colors">
