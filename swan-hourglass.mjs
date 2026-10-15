@@ -74,8 +74,8 @@ class SwanHourglass extends HTMLElement {
       <style>
         :host { display: block; color: #242044; font-family: system-ui, sans-serif; }
         * { box-sizing: border-box; }
-        .card { overflow: hidden; border: 1px solid #e1dfeb; border-radius: 20px; background: white; box-shadow: 0 12px 40px #24204408; }
-        svg { display: block; width: 100%; height: auto; }
+        .card { display: grid; grid-template-columns: 300px minmax(0, 1fr); align-items: start; overflow: hidden; border: 1px solid #e1dfeb; border-radius: 20px; background: white; box-shadow: 0 12px 40px #24204408; }
+        svg { display: block; grid-column: 2; grid-row: 1; align-self: center; width: 100%; height: auto; }
         svg text { fill: #242044; text-anchor: middle; dominant-baseline: middle; }
         .axis { stroke: #aba6c7; stroke-width: 1.5; stroke-dasharray: 5 7; }
         .space { font-size: 19px; font-weight: 700; }
@@ -88,7 +88,7 @@ class SwanHourglass extends HTMLElement {
         .validate path { stroke: #00a968; }
         .validate rect { fill: #00a968; }
         [hidden] { display: none !important; }
-        .controls { border-top: 1px solid #e1dfeb; padding: 24px; display: grid; gap: 22px; }
+        .controls { grid-column: 1; grid-row: 1; align-self: stretch; align-content: start; min-width: 0; border-right: 1px solid #e1dfeb; padding: 20px; display: grid; gap: 22px; }
         .control-heading { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-bottom: 10px; }
         h2 { margin: 0; font-size: .85rem; letter-spacing: .08em; text-transform: uppercase; }
         .buttons { display: flex; flex-wrap: wrap; gap: 8px; }
@@ -106,7 +106,11 @@ class SwanHourglass extends HTMLElement {
         select { font: inherit; padding: 8px 12px; color: #242044; border: 1px solid #dcd8eb; border-radius: 8px; background: white; }
         input:focus-visible, select:focus-visible { outline: 3px solid #7263cb; outline-offset: 3px; }
         .hint { margin: 0; font-size: .8rem; color: #777187; }
-        @media (max-width: 500px) { .controls { padding: 16px; } }
+        @media (max-width: 760px) {
+          .card { grid-template-columns: minmax(0, 1fr); }
+          svg { grid-column: 1; }
+          .controls { grid-row: 2; border-right: 0; border-top: 1px solid #e1dfeb; padding: 16px; }
+        }
       </style>
       <section class="card" aria-label="Interactive Swan Hourglass">
         <svg viewBox="0 -20 880 790" role="img" aria-labelledby="diagram-title diagram-description">
