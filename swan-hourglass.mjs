@@ -125,9 +125,9 @@ class SwanHourglass extends HTMLElement {
           </g>
 
           <g data-layer="align" class="transition">
-            <path d="M425 144 V132 C425 108 455 108 455 132 V144" marker-end="url(#pink-arrow)" />
-            <rect x="378" y="78" width="124" height="31" rx="6" />
-            <text x="440" y="94">${escapeText(content.transitions.align)}</text>
+            <path d="M425 144 V120 C425 96 455 96 455 120 V144" marker-end="url(#pink-arrow)" />
+            <rect x="378" y="66" width="124" height="31" rx="6" />
+            <text x="440" y="82">${escapeText(content.transitions.align)}</text>
           </g>
           <g data-layer="bet" class="transition">
             <path d="M486 355 V405" marker-end="url(#pink-arrow)" />
@@ -135,7 +135,7 @@ class SwanHourglass extends HTMLElement {
             <text x="543" y="380">${escapeText(content.transitions.bet)}</text>
           </g>
           <g data-layer="release" class="transition">
-            <path d="M455 632 V614 C455 590 425 590 425 614 V632" marker-end="url(#pink-arrow)" />
+            <path d="M455 632 V602 C455 578 425 578 425 602 V632" marker-end="url(#pink-arrow)" />
             <rect x="389" y="650" width="102" height="31" rx="6" />
             <text x="440" y="666">${escapeText(content.transitions.release)}</text>
           </g>
