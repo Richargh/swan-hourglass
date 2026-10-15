@@ -4,10 +4,10 @@ const content = {
   license: 'CC-BY-SA-4.0',
   licenseUrl: 'https://creativecommons.org/licenses/by-sa/4.0/',
   title: '(Black) Swan Hourglass',
-  description: 'Problem space on the left, solution space on the right; idea above, decision below. Learning and distilling form the upper ring. Using and changing form the lower ring. Align, bet, release, listen, and validate connect the activities.',
+  description: 'Problem space on the left, solution space on the right; idea space above, decision space below. Learning and distilling form the upper ring. Using and changing form the lower ring. Align, bet, release, listen, and validate connect the activities.',
   poles: {
-    top: 'Idea',
-    bottom: 'Decision',
+    top: 'Idea Space',
+    bottom: 'Decision Space',
   },
   spaces: {
     left: ['Problem', 'space'],
