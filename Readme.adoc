@@ -29,3 +29,17 @@ mise run check
 ----
 
 Runs Oxlint and html-validate.
+
+== License
+
+Source code (JavaScript, HTML, CSS) and project configuration are released under
+link:LICENSES/Unlicense.txt[The Unlicense] (`Unlicense`).
+
+Documentation, original illustrations, and the Swan Hourglass diagram's visual
+design and wording are licensed under
+link:LICENSES/CC-BY-SA-4.0.txt[Creative Commons Attribution-ShareAlike 4.0 International]
+(`CC-BY-SA-4.0`). The diagram's rendering implementation is code under The Unlicense;
+its visual design and wording are content under CC BY-SA 4.0.
+
+Third-party material retains its original license. These grants apply only to
+material the repository's contributors have the right to license.
