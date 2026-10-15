@@ -78,7 +78,8 @@ class SwanHourglass extends HTMLElement {
         .gap-label { display: flex; justify-content: space-between; font-size: .85rem; }
         output { font-variant-numeric: tabular-nums; color: #68627e; }
         input[type="range"] { width: 100%; margin: 0; accent-color: #7162c9; }
-        input:focus-visible { outline: 3px solid #7263cb; outline-offset: 3px; }
+        select { font: inherit; padding: 8px 12px; color: #242044; border: 1px solid #dcd8eb; border-radius: 8px; background: white; }
+        input:focus-visible, select:focus-visible { outline: 3px solid #7263cb; outline-offset: 3px; }
         .hint { margin: 0; font-size: .8rem; color: #777187; }
         @media (max-width: 500px) { .controls { padding: 16px; } }
       </style>
@@ -88,13 +89,17 @@ class SwanHourglass extends HTMLElement {
           <desc id="diagram-description">${escapeText(content.description)}</desc>
           <metadata><rdf:RDF xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#" xmlns:cc="http://creativecommons.org/ns#"><cc:Work rdf:about=""><cc:license rdf:resource="${escapeText(content.licenseUrl)}" /></cc:Work></rdf:RDF></metadata>
           <defs>
+            <clipPath id="clip-top-left"><rect data-gap-clip="top-left" x="0" y="-20" width="435" height="385" /></clipPath>
+            <clipPath id="clip-top-right"><rect data-gap-clip="top-right" x="445" y="-20" width="435" height="385" /></clipPath>
+            <clipPath id="clip-bottom-left"><rect data-gap-clip="bottom-left" x="0" y="375" width="435" height="365" /></clipPath>
+            <clipPath id="clip-bottom-right"><rect data-gap-clip="bottom-right" x="445" y="375" width="435" height="365" /></clipPath>
             <marker id="pink-arrow" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="4" markerHeight="4" orient="auto-start-reverse"><path d="M 0 0 L 10 5 L 0 10 Z" fill="#e9008f" /></marker>
             <marker id="green-arrow" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="4" markerHeight="4" orient="auto"><path d="M 0 0 L 10 5 L 0 10 Z" fill="#00a968" /></marker>
           </defs>
-          <rect data-quadrant="top-left" transform="translate(-5 -5)" x="150" y="50" width="290" height="320" fill="#f0edff" />
-          <rect data-quadrant="top-right" transform="translate(5 -5)" x="440" y="50" width="290" height="320" fill="#ecefff" />
-          <rect data-quadrant="bottom-left" transform="translate(-5 5)" x="150" y="370" width="290" height="320" fill="#f5f2ff" />
-          <rect data-quadrant="bottom-right" transform="translate(5 5)" x="440" y="370" width="290" height="320" fill="#f0f3ff" />
+          <path data-quadrant="top-left" clip-path="url(#clip-top-left)" d="M440 111.072 A132 132 0 1 0 389.657 370 H440 Z" fill="#f0edff" />
+          <path data-quadrant="top-right" clip-path="url(#clip-top-right)" d="M440 111.072 A132 132 0 1 1 490.343 370 H440 Z" fill="#ecefff" />
+          <path data-quadrant="bottom-left" clip-path="url(#clip-bottom-left)" d="M440 645.137 A140 140 0 1 1 389.061 370 H440 Z" fill="#f5f2ff" />
+          <path data-quadrant="bottom-right" clip-path="url(#clip-bottom-right)" d="M440 645.137 A140 140 0 1 0 490.939 370 H440 Z" fill="#f0f3ff" />
           <path class="axis" d="M440 50V690 M150 370H730" />
           <text class="pole" x="440" y="19">${escapeText(content.poles.top)}</text>
           <text class="pole" x="440" y="718">${escapeText(content.poles.bottom)}</text>
@@ -148,9 +153,16 @@ class SwanHourglass extends HTMLElement {
         </svg>
         <div class="controls">
           <div class="gap-control">
-            <div class="gap-label"><label for="box-gap">Box gap</label><output for="box-gap" id="gap-value">10</output></div>
+            <label for="background-shape">Background shape</label>
+            <select id="background-shape">
+              <option value="half-circles" selected>Half-circles</option>
+              <option value="boxes">Boxes</option>
+            </select>
+          </div>
+          <div class="gap-control">
+            <div class="gap-label"><label for="box-gap">Background gap</label><output for="box-gap" id="gap-value">10</output></div>
             <input id="box-gap" type="range" min="0" max="50" step="5" value="10" aria-describedby="gap-hint">
-            <p class="hint" id="gap-hint">Spacing between boxes in SVG units. The hourglass stays fixed.</p>
+            <p class="hint" id="gap-hint">Cuts a centered gap out of the backgrounds in SVG units. Nothing moves.</p>
           </div>
           ${this.controls('Activities', activities)}
           ${this.controls('Transitions', transitions)}
@@ -158,13 +170,34 @@ class SwanHourglass extends HTMLElement {
         </div>
       </section>
     `;
+    root.querySelector('#background-shape').addEventListener('change', event => {
+      const paths = event.target.value === 'boxes'
+        ? {
+          'top-left': 'M150 50 H440 V370 H150 Z',
+          'top-right': 'M440 50 H730 V370 H440 Z',
+          'bottom-left': 'M150 370 H440 V690 H150 Z',
+          'bottom-right': 'M440 370 H730 V690 H440 Z',
+        }
+        : {
+          'top-left': 'M440 111.072 A132 132 0 1 0 389.657 370 H440 Z',
+          'top-right': 'M440 111.072 A132 132 0 1 1 490.343 370 H440 Z',
+          'bottom-left': 'M440 645.137 A140 140 0 1 1 389.061 370 H440 Z',
+          'bottom-right': 'M440 645.137 A140 140 0 1 0 490.939 370 H440 Z',
+        };
+      for (const background of root.querySelectorAll('[data-quadrant]')) {
+        background.setAttribute('d', paths[background.dataset.quadrant]);
+      }
+    });
     root.querySelector('#box-gap').addEventListener('input', event => {
       const gap = Number(event.target.value);
       const offset = gap / 2;
-      for (const box of root.querySelectorAll('[data-quadrant]')) {
-        const x = box.dataset.quadrant.endsWith('left') ? -offset : offset;
-        const y = box.dataset.quadrant.startsWith('top') ? -offset : offset;
-        box.setAttribute('transform', `translate(${x} ${y})`);
+      for (const clip of root.querySelectorAll('[data-gap-clip]')) {
+        const left = clip.dataset.gapClip.endsWith('left');
+        const top = clip.dataset.gapClip.startsWith('top');
+        clip.setAttribute('x', String(left ? 0 : 440 + offset));
+        clip.setAttribute('y', String(top ? -20 : 370 + offset));
+        clip.setAttribute('width', String(440 - offset));
+        clip.setAttribute('height', String((top ? 390 : 370) - offset));
       }
       root.querySelector('#gap-value').value = String(gap);
     });
