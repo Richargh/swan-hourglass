@@ -1,6 +1,45 @@
-const activities = ['Learning', 'Distilling', 'Changing', 'Using'];
-const transitions = ['Translate', 'Bet', 'Release', 'Listen', 'Validate'];
-const key = name => name.toLowerCase();
+// Diagram content: CC-BY-SA-4.0. Rendering implementation: Unlicense.
+// See readme.adoc and LICENSES/ for the licensing boundary and terms.
+const content = {
+  license: 'CC-BY-SA-4.0',
+  licenseUrl: 'https://creativecommons.org/licenses/by-sa/4.0/',
+  title: '(Black) Swan Hourglass',
+  description: 'Problem space on the left, solution space on the right; idea above, decision below. Learning and distilling form the upper ring. Using and changing form the lower ring. Align, bet, release, listen, and validate connect the activities.',
+  poles: {
+    top: 'Idea',
+    bottom: 'Decision',
+  },
+  spaces: {
+    left: ['Problem', 'space'],
+    right: ['Solution', 'space'],
+  },
+  activities: {
+    learning: 'Learning',
+    distilling: 'Distilling',
+    changing: 'Changing',
+    using: 'Using',
+  },
+  transitions: {
+    align: 'Align',
+    bet: 'Bet',
+    release: 'Release',
+    listen: 'Listen',
+    validate: 'Validate',
+  },
+};
+
+const activities = Object.values(content.activities);
+const transitions = Object.values(content.transitions);
+const escapeText = text => text
+    .replaceAll('&', '&amp;')
+    .replaceAll('<', '&lt;')
+    .replaceAll('>', '&gt;')
+    .replaceAll('"', '&quot;');
+const itemKeys = new Map(
+  Object.entries({ ...content.activities, ...content.transitions })
+      .map(([id, label]) => [label, id]),
+);
+const key = name => itemKeys.get(name);
 
 class SwanHourglass extends HTMLElement {
   constructor() {
@@ -45,8 +84,9 @@ class SwanHourglass extends HTMLElement {
       </style>
       <section class="card" aria-label="Interactive Swan Hourglass">
         <svg viewBox="0 -20 880 760" role="img" aria-labelledby="diagram-title diagram-description">
-          <title id="diagram-title">Swan Hourglass</title>
-          <desc id="diagram-description">Problem space on the left, solution space on the right; idea above, decision below. Learning and distilling form the upper ring. Using and changing form the lower ring. Translate, bet, release, listen, and validate connect the activities. Buttons below toggle their visibility.</desc>
+          <title id="diagram-title">${escapeText(content.title)}</title>
+          <desc id="diagram-description">${escapeText(content.description)}</desc>
+          <metadata><rdf:RDF xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#" xmlns:cc="http://creativecommons.org/ns#"><cc:Work rdf:about=""><cc:license rdf:resource="${escapeText(content.licenseUrl)}" /></cc:Work></rdf:RDF></metadata>
           <defs>
             <marker id="pink-arrow" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="4" markerHeight="4" orient="auto-start-reverse"><path d="M 0 0 L 10 5 L 0 10 Z" fill="#e9008f" /></marker>
             <marker id="green-arrow" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="4" markerHeight="4" orient="auto"><path d="M 0 0 L 10 5 L 0 10 Z" fill="#00a968" /></marker>
@@ -56,53 +96,53 @@ class SwanHourglass extends HTMLElement {
           <rect data-quadrant="bottom-left" transform="translate(-5 5)" x="150" y="370" width="290" height="320" fill="#f5f2ff" />
           <rect data-quadrant="bottom-right" transform="translate(5 5)" x="440" y="370" width="290" height="320" fill="#f0f3ff" />
           <path class="axis" d="M440 50V690 M150 370H730" />
-          <text class="pole" x="440" y="19">Idea</text>
-          <text class="pole" x="440" y="718">Decision</text>
-          <text class="space" x="85" y="358"><tspan x="85">Problem</tspan><tspan x="85" dy="24">space</tspan></text>
-          <text class="space" x="795" y="358"><tspan x="795">Solution</tspan><tspan x="795" dy="24">space</tspan></text>
+          <text class="pole" x="440" y="19">${escapeText(content.poles.top)}</text>
+          <text class="pole" x="440" y="718">${escapeText(content.poles.bottom)}</text>
+          <text class="space" x="85" y="358"><tspan x="85">${escapeText(content.spaces.left[0])}</tspan><tspan x="85" dy="24">${escapeText(content.spaces.left[1])}</tspan></text>
+          <text class="space" x="795" y="358"><tspan x="795">${escapeText(content.spaces.right[0])}</tspan><tspan x="795" dy="24">${escapeText(content.spaces.right[1])}</tspan></text>
 
           <g class="hourglass" transform="translate(0 -10)">
           <g data-layer="learning" class="activity">
             <path class="ring" d="M394 355 A106.633 106.633 0 0 1 425 144" />
-            <text class="activity-label" x="235" y="238">Learning</text>
+            <text class="activity-label" x="235" y="238">${escapeText(content.activities.learning)}</text>
           </g>
           <g data-layer="distilling" class="activity">
             <path class="ring" d="M455 144 A106.633 106.633 0 0 1 486 355" />
-            <text class="activity-label" x="645" y="238">Distilling</text>
+            <text class="activity-label" x="645" y="238">${escapeText(content.activities.distilling)}</text>
           </g>
           <g data-layer="using" class="activity">
             <path class="ring" d="M425 632 A114.554 114.554 0 0 1 394 405" />
-            <text class="activity-label" x="235" y="523">Using</text>
+            <text class="activity-label" x="235" y="523">${escapeText(content.activities.using)}</text>
           </g>
           <g data-layer="changing" class="activity">
             <path class="ring" d="M486 405 A114.554 114.554 0 0 1 455 632" />
-            <text class="activity-label" x="645" y="523">Changing</text>
+            <text class="activity-label" x="645" y="523">${escapeText(content.activities.changing)}</text>
           </g>
 
-          <g data-layer="translate" class="transition">
+          <g data-layer="align" class="transition">
             <path d="M425 144 V132 C425 108 455 108 455 132 V144" marker-end="url(#pink-arrow)" />
             <rect x="378" y="78" width="124" height="31" rx="6" />
-            <text x="440" y="94">Translate</text>
+            <text x="440" y="94">${escapeText(content.transitions.align)}</text>
           </g>
           <g data-layer="bet" class="transition">
             <path d="M486 355 V405" marker-end="url(#pink-arrow)" />
             <rect x="505" y="364.5" width="76" height="31" rx="6" />
-            <text x="543" y="380">Bet</text>
+            <text x="543" y="380">${escapeText(content.transitions.bet)}</text>
           </g>
           <g data-layer="release" class="transition">
             <path d="M455 632 V614 C455 590 425 590 425 614 V632" marker-end="url(#pink-arrow)" />
             <rect x="389" y="650" width="102" height="31" rx="6" />
-            <text x="440" y="666">Release</text>
+            <text x="440" y="666">${escapeText(content.transitions.release)}</text>
           </g>
           <g data-layer="listen" class="transition">
             <path d="M394 405 V355" marker-end="url(#pink-arrow)" />
             <rect x="299" y="364.5" width="76" height="31" rx="6" />
-            <text x="337" y="380">Listen</text>
+            <text x="337" y="380">${escapeText(content.transitions.listen)}</text>
           </g>
           <g data-layer="validate" class="transition validate">
             <path d="M486 355 C455.333 359.505 424.667 359.505 394 355" marker-end="url(#green-arrow)" />
             <rect x="386" y="291" width="108" height="31" rx="6" />
-            <text x="440" y="307">Validate</text>
+            <text x="440" y="307">${escapeText(content.transitions.validate)}</text>
           </g>
           </g>
         </svg>
@@ -146,7 +186,7 @@ class SwanHourglass extends HTMLElement {
     const group = title.toLowerCase();
     return `<div role="group" aria-label="${title} visibility">
       <div class="control-heading"><h2>${title}</h2><button type="button" class="group-toggle" data-group="${group}">Hide all ${group}</button></div>
-      <div class="buttons">${names.map(name => `<button type="button" data-kind="${group}" data-item="${key(name)}" aria-pressed="true" aria-label="Show ${name}">${name}</button>`).join('')}</div>
+      <div class="buttons">${names.map(name => `<button type="button" data-kind="${group}" data-item="${key(name)}" aria-pressed="true" aria-label="Show ${escapeText(name)}">${escapeText(name)}</button>`).join('')}</div>
     </div>`;
   }
 

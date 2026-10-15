@@ -32,14 +32,17 @@ Runs Oxlint and html-validate.
 
 == License
 
-Source code (JavaScript, HTML, CSS) and project configuration are released under
-link:LICENSES/Unlicense.txt[The Unlicense] (`Unlicense`).
+Implementation source code, documentation, and project configuration are released
+under link:LICENSES/Unlicense.txt[The Unlicense] (`Unlicense`).
+The included license texts retain their own terms.
 
-Documentation, original illustrations, and the Swan Hourglass diagram's visual
-design and wording are licensed under
+The diagram's title, labels, and descriptive text are stored in the `content`
+object in link:swan-hourglass.mjs[`swan-hourglass.mjs`]. This content, the diagram's
+visual design, and the rendered SVG (including its text and annotations) are
+licensed under
 link:LICENSES/CC-BY-SA-4.0.txt[Creative Commons Attribution-ShareAlike 4.0 International]
-(`CC-BY-SA-4.0`). The diagram's rendering implementation is code under The Unlicense;
-its visual design and wording are content under CC BY-SA 4.0.
+(`CC-BY-SA-4.0`), in both source and rendered form.
+The JavaScript and HTML rendering implementation remains under The Unlicense.
 
 Third-party material retains its original license. These grants apply only to
 material the repository's contributors have the right to license.
