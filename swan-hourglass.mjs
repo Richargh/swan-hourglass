@@ -41,6 +41,31 @@ const itemKeys = new Map(
 );
 const key = name => itemKeys.get(name);
 
+const arrowStyles = {
+  align: {
+    straight: 'M425 144 H455',
+    curved: 'M425 144 V120 C425 96 455 96 455 120 V144',
+    defaultCurved: true,
+  },
+  release: {
+    straight: 'M455 632 H425',
+    curved: 'M455 632 V656 C455 680 425 680 425 656 V632',
+    defaultCurved: false,
+  },
+  listen: {
+    straight: 'M394 405 V355',
+    curved: 'M394 405 H382 C350 405 350 355 382 355 H394',
+    defaultCurved: false,
+    label: { straight: [299, 337], curved: [269, 307] },
+  },
+  bet: {
+    straight: 'M486 355 V405',
+    curved: 'M486 355 H498 C530 355 530 405 498 405 H486',
+    defaultCurved: false,
+    label: { straight: [505, 543], curved: [535, 573] },
+  },
+};
+
 class SwanHourglass extends HTMLElement {
   constructor() {
     super();
@@ -84,7 +109,7 @@ class SwanHourglass extends HTMLElement {
         @media (max-width: 500px) { .controls { padding: 16px; } }
       </style>
       <section class="card" aria-label="Interactive Swan Hourglass">
-        <svg viewBox="0 -20 880 760" role="img" aria-labelledby="diagram-title diagram-description">
+        <svg viewBox="0 -20 880 790" role="img" aria-labelledby="diagram-title diagram-description">
           <title id="diagram-title">${escapeText(content.title)}</title>
           <desc id="diagram-description">${escapeText(content.description)}</desc>
           <metadata><rdf:RDF xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#" xmlns:cc="http://creativecommons.org/ns#"><cc:Work rdf:about=""><cc:license rdf:resource="${escapeText(content.licenseUrl)}" /></cc:Work></rdf:RDF></metadata>
@@ -102,7 +127,7 @@ class SwanHourglass extends HTMLElement {
           <path data-quadrant="bottom-right" clip-path="url(#clip-bottom-right)" d="M440 645.137 A140 140 0 1 0 490.939 370 H440 Z" fill="#f0f3ff" />
           <path class="axis" d="M440 50V690 M150 370H730" />
           <text class="pole" x="440" y="19">${escapeText(content.poles.top)}</text>
-          <text class="pole" x="440" y="718">${escapeText(content.poles.bottom)}</text>
+          <text class="pole" x="440" y="748">${escapeText(content.poles.bottom)}</text>
           <text class="space" x="85" y="358"><tspan x="85">${escapeText(content.spaces.left[0])}</tspan><tspan x="85" dy="24">${escapeText(content.spaces.left[1])}</tspan></text>
           <text class="space" x="795" y="358"><tspan x="795">${escapeText(content.spaces.right[0])}</tspan><tspan x="795" dy="24">${escapeText(content.spaces.right[1])}</tspan></text>
 
@@ -125,22 +150,22 @@ class SwanHourglass extends HTMLElement {
           </g>
 
           <g data-layer="align" class="transition">
-            <path d="M425 144 V120 C425 96 455 96 455 120 V144" marker-end="url(#pink-arrow)" />
+            <path d="${arrowStyles.align.curved}" marker-end="url(#pink-arrow)" />
             <rect x="378" y="66" width="124" height="31" rx="6" />
             <text x="440" y="82">${escapeText(content.transitions.align)}</text>
           </g>
           <g data-layer="bet" class="transition">
-            <path d="M486 355 V405" marker-end="url(#pink-arrow)" />
+            <path d="${arrowStyles.bet.straight}" marker-end="url(#pink-arrow)" />
             <rect x="505" y="364.5" width="76" height="31" rx="6" />
             <text x="543" y="380">${escapeText(content.transitions.bet)}</text>
           </g>
           <g data-layer="release" class="transition">
-            <path d="M455 632 V602 C455 578 425 578 425 602 V632" marker-end="url(#pink-arrow)" />
-            <rect x="389" y="650" width="102" height="31" rx="6" />
-            <text x="440" y="666">${escapeText(content.transitions.release)}</text>
+            <path d="${arrowStyles.release.straight}" marker-end="url(#pink-arrow)" />
+            <rect x="389" y="686" width="102" height="31" rx="6" />
+            <text x="440" y="702">${escapeText(content.transitions.release)}</text>
           </g>
           <g data-layer="listen" class="transition">
-            <path d="M394 405 V355" marker-end="url(#pink-arrow)" />
+            <path d="${arrowStyles.listen.straight}" marker-end="url(#pink-arrow)" />
             <rect x="299" y="364.5" width="76" height="31" rx="6" />
             <text x="337" y="380">${escapeText(content.transitions.listen)}</text>
           </g>
@@ -166,6 +191,11 @@ class SwanHourglass extends HTMLElement {
           </div>
           ${this.controls('Activities', activities)}
           ${this.controls('Transitions', transitions)}
+          <div role="group" aria-label="Transition decision authority">
+            <div class="control-heading"><h2>Decision</h2></div>
+            <div class="buttons">${Object.entries(arrowStyles).map(([id, style]) => `<button type="button" data-arrow="${id}" aria-pressed="${style.defaultCurved}" aria-label="Outside decision for ${escapeText(content.transitions[id])}">${escapeText(content.transitions[id])}: ${style.defaultCurved ? 'Outside' : 'Team'}</button>`).join('')}</div>
+            <p class="hint">Team: straight arrow. Outside: outward arrow.</p>
+          </div>
           <p class="hint">Toggle any element to explore the model. The quadrants stay visible.</p>
         </div>
       </section>
@@ -204,7 +234,21 @@ class SwanHourglass extends HTMLElement {
     root.addEventListener('click', event => {
       const button = event.target.closest('button');
       if (!button) return;
-      if (button.dataset.item) {
+      if (button.dataset.arrow) {
+        const id = button.dataset.arrow;
+        const curved = button.getAttribute('aria-pressed') !== 'true';
+        const style = arrowStyles[id];
+        const mode = curved ? 'curved' : 'straight';
+        const layer = this.layer(id);
+        layer.querySelector('path').setAttribute('d', style[mode]);
+        if (style.label) {
+          const [rectX, textX] = style.label[mode];
+          layer.querySelector('rect').setAttribute('x', String(rectX));
+          layer.querySelector('text').setAttribute('x', String(textX));
+        }
+        button.setAttribute('aria-pressed', String(curved));
+        button.textContent = `${content.transitions[id]}: ${curved ? 'Outside' : 'Team'}`;
+      } else if (button.dataset.item) {
         this.setVisible(button.dataset.item, button.getAttribute('aria-pressed') !== 'true');
       } else {
         const names = button.dataset.group === 'activities' ? activities : transitions;
