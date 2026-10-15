@@ -1,0 +1,12 @@
+{
+  "extends": ["html-validate:recommended"],
+  "elements": [
+    "html5",
+    {
+      "swan-hourglass": {
+        "flow": true,
+        "phrasing": false
+      }
+    }
+  ]
+}

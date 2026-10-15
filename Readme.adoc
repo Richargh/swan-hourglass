@@ -1,0 +1,31 @@
+= Swan Hourglass
+
+Visualizes the software delivery life cycle.
+
+== Prerequisites
+
+Install https://mise.jdx.dev/getting-started.html[mise], then install the project's Node.js version:
+
+[source,sh]
+----
+mise install
+----
+
+== Run
+
+[source,sh]
+----
+npm ci
+mise run dev
+----
+
+Open link:http://localhost:3000[].
+
+== Check
+
+[source,sh]
+----
+mise run check
+----
+
+Runs Oxlint and html-validate.

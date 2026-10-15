@@ -1,0 +1,10 @@
+[tools]
+node = "26.12.0"
+
+[tasks.check]
+description = "Run all lints"
+run = "npm run lint"
+
+[tasks.dev]
+description = "Start the development server"
+run = "npm run dev"

@@ -1,0 +1,16 @@
+{
+  "name": "swan-hourglass",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "node server.js",
+    "lint": "npm run lint:js && npm run lint:html",
+    "lint:js": "oxlint swan-hourglass.mjs server.js",
+    "lint:html": "html-validate index.html"
+  },
+  "devDependencies": {
+    "html-validate": "^11.16.2",
+    "oxlint": "^1.88.0"
+  }
+}

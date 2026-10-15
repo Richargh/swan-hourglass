@@ -1,0 +1,28 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="color-scheme" content="light">
+  <title>Swan Hourglass</title>
+  <style>
+    * { box-sizing: border-box; }
+    body { margin: 0; background: #f5f5fa; color: #242044; font-family: system-ui, sans-serif; }
+    main { max-width: 1080px; margin: 0 auto; padding: 40px 20px; }
+    header { margin-bottom: 24px; }
+    h1 { margin: 0; font-size: clamp(1.8rem, 5vw, 2.6rem); letter-spacing: -.04em; }
+  </style>
+  <script type="importmap">
+    { "imports": { "swan-hourglass": "./swan-hourglass.mjs" } }
+  </script>
+  <script type="module">import 'swan-hourglass';</script>
+</head>
+<body>
+  <main>
+    <header>
+      <h1>(Black) Swan Hourglass</h1>
+    </header>
+    <swan-hourglass></swan-hourglass>
+  </main>
+</body>
+</html>
