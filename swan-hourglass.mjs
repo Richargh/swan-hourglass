@@ -168,12 +168,17 @@ class SwanHourglass extends HTMLElement {
     const root = this.attachShadow({ mode: 'open' });
     const boundaryColors = Object.fromEntries(Object.entries(boundaryTypes).map(([id, boundary]) => [id, boundary.color]));
     let nextBoundaryNumber = Object.keys(boundaryColors).length + 1;
+    this.workDistance = 0;
+    this.workFrame = null;
+    this.workLastTime = null;
+    this.workSegments = [];
+    this.workRunning = false;
     root.innerHTML = `
       <style>
         :host { display: block; color: #242044; font-family: system-ui, sans-serif; --sand-color: #d9b56e; }
         * { box-sizing: border-box; }
         .card { display: grid; grid-template-columns: 580px minmax(0, 1fr); align-items: start; overflow: hidden; border: 1px solid #e1dfeb; border-radius: 20px; background: white; box-shadow: 0 12px 40px #24204408; }
-        svg { display: block; grid-column: 2; grid-row: 1; align-self: start; width: 100%; height: auto; max-height: calc(100dvh - 160px); }
+        svg { display: block; grid-column: 2; grid-row: 1; align-self: start; width: 100%; height: auto; max-height: calc(100dvh - 280px); }
         svg text { fill: #242044; text-anchor: middle; dominant-baseline: middle; }
         .axis { stroke: #aba6c7; stroke-width: 1.5; stroke-dasharray: 5 7; }
         .space { font-size: 19px; font-weight: 700; }
@@ -195,6 +200,23 @@ class SwanHourglass extends HTMLElement {
         .sand-easy { fill: color-mix(in srgb, var(--sand-color), white 25%); }
         .sand-obvious { fill: color-mix(in srgb, var(--sand-color), white 50%); }
         .sand-trickle { fill: none; stroke: var(--sand-color); stroke-width: 3; stroke-linecap: round; stroke-dasharray: 1 7; }
+        #work-item { pointer-events: none; }
+        #work-item rect { fill: #242044; stroke: white; stroke-width: 2; }
+        .work-option { display: flex; align-items: center; gap: 8px; font-size: .85rem; }
+        .work-player { width: min(760px, calc(100% - 32px)); margin: 16px auto; display: grid; grid-template-columns: minmax(0, 1fr) minmax(180px, 280px) minmax(0, 1fr); align-items: center; gap: 20px; padding: 16px 20px; border: 1px solid #dedce7; border-radius: 14px; background: linear-gradient(#fafafe, #eeedf4); }
+        .player-info { display: grid; gap: 5px; }
+        .player-info strong { font-size: .7rem; letter-spacing: .12em; text-transform: uppercase; color: #777187; }
+        #work-status { color: #242044; font-size: .95rem; }
+        .player-center { display: grid; gap: 12px; }
+        .player-transport { display: flex; align-items: center; justify-content: center; gap: 18px; padding-right: 50px; }
+        .work-player button { border-radius: 50%; display: grid; place-items: center; padding: 0; background: linear-gradient(white, #e7e5ef); border-color: #cfccd9; box-shadow: 0 2px 4px #24204412; }
+        #work-play { width: 48px; height: 48px; font-size: 21px; color: #242044; }
+        #work-reset { width: 32px; height: 32px; font-size: 22px; color: #68627e; }
+        #work-progress { display: block; width: 100%; height: 5px; border: 0; border-radius: 4px; overflow: hidden; accent-color: #7162c9; background: #d9d6e4; }
+        #work-progress::-webkit-progress-bar { background: #d9d6e4; }
+        #work-progress::-webkit-progress-value { background: #7162c9; }
+        #work-progress::-moz-progress-bar { background: #7162c9; }
+        .work-player .work-option { justify-self: end; color: #68627e; }
         .role text { font-size: 15px; fill: #68627e; }
         .role use { color: #68627e; }
         .activity rect { fill: #7162c9; }
@@ -208,7 +230,7 @@ class SwanHourglass extends HTMLElement {
         .shortcut path { stroke: #00a968; }
         .shortcut rect { fill: #00a968; }
         [hidden] { display: none !important; }
-        .controls { max-height: calc(100dvh - 160px); overflow-y: auto; grid-column: 1; grid-row: 1; align-self: stretch; align-content: start; min-width: 0; border-right: 1px solid #e1dfeb; padding: 16px; display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 20px; }
+        .controls { max-height: calc(100dvh - 280px); overflow-y: auto; grid-column: 1; grid-row: 1; align-self: stretch; align-content: start; min-width: 0; border-right: 1px solid #e1dfeb; padding: 16px; display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 20px; }
         .other-controls { grid-column: 2; grid-row: 1; display: grid; align-content: start; gap: 22px; min-width: 0; }
         .control-heading { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-bottom: 10px; }
         h2 { margin: 0; font-size: .85rem; letter-spacing: .08em; text-transform: uppercase; }
@@ -251,6 +273,8 @@ class SwanHourglass extends HTMLElement {
         @media (max-width: 600px) {
           .controls { grid-template-columns: minmax(0, 1fr); }
           .other-controls { grid-column: 1; grid-row: 2; }
+          .work-player { grid-template-columns: minmax(0, 1fr); gap: 16px; text-align: center; }
+          .work-player .work-option { justify-self: center; }
         }
       </style>
       <section class="card" aria-label="Interactive Swan Hourglass">
@@ -393,6 +417,9 @@ class SwanHourglass extends HTMLElement {
             <rect x="402" y="291" width="76" height="31" rx="6" />
             <text x="440" y="307">${escapeText(content.transitions.probe)}</text>
           </g>
+          <g id="work-item" hidden aria-hidden="true">
+            <rect x="-6" y="-6" width="12" height="12" rx="2" />
+          </g>
           </g>
           <g data-organisation-labels>
           <g data-label-for="coordination">
@@ -478,6 +505,17 @@ class SwanHourglass extends HTMLElement {
           </div>
         </div>
       </section>
+        <div class="work-player" role="group" aria-label="Work flow playback">
+          <div class="player-info"><strong>Work flow</strong><output id="work-status" aria-live="off">Ready</output></div>
+          <div class="player-center">
+            <div class="player-transport">
+              <button type="button" id="work-reset" aria-label="Reset work flow" title="Reset"><span aria-hidden="true">↺</span></button>
+              <button type="button" id="work-play" aria-pressed="false" aria-label="Play work flow" title="Play"><span id="work-play-icon" aria-hidden="true">▶</span></button>
+            </div>
+            <progress id="work-progress" max="1" value="0" aria-label="Work flow cycle progress"></progress>
+          </div>
+          <label class="work-option"><input type="checkbox" id="work-probe">Include Probe detour</label>
+        </div>
     `;
     this.updateBoundaryGap();
     root.addEventListener('input', event => {
@@ -534,9 +572,26 @@ class SwanHourglass extends HTMLElement {
       }
     });
     root.querySelector('#box-gap').addEventListener('input', () => this.updateBoundaryGap());
+    root.querySelector('#work-probe').addEventListener('change', () => {
+      this.buildWorkRoute();
+      if (this.workRunning || this.workDistance > 0) this.renderWorkItem();
+    });
     root.addEventListener('click', event => {
       const button = event.target.closest('button');
       if (!button) return;
+      if (button.id === 'work-play') {
+        if (this.workRunning) this.pauseWorkFlow();
+        else this.playWorkFlow();
+        return;
+      }
+      if (button.id === 'work-reset') {
+        this.pauseWorkFlow();
+        this.workDistance = 0;
+        root.querySelector('#work-item').setAttribute('hidden', '');
+        root.querySelector('#work-status').textContent = 'Ready';
+        root.querySelector('#work-progress').value = 0;
+        return;
+      }
       if (button.id === 'hatching-toggle') {
         const enabled = button.getAttribute('aria-pressed') !== 'true';
         if (enabled) {
@@ -651,6 +706,8 @@ class SwanHourglass extends HTMLElement {
         visibilityButton.setAttribute('aria-label', `Show ${name}`);
         button.textContent = `${name}: ${curved ? 'Outside' : 'Inside'}`;
         this.updateOutsideOrganisation(id);
+        this.buildWorkRoute();
+        if (this.workRunning || this.workDistance > 0) this.renderWorkItem();
       } else if (button.dataset.item) {
         this.setVisible(button.dataset.item, button.getAttribute('aria-pressed') !== 'true');
       } else {
@@ -664,6 +721,97 @@ class SwanHourglass extends HTMLElement {
 
   connectedCallback() {
     this.ensureEndFunnels();
+  }
+
+  disconnectedCallback() {
+    this.pauseWorkFlow();
+  }
+
+  buildWorkRoute() {
+    const route = ['learning', 'align', 'distilling'];
+    if (this.shadowRoot.querySelector('#work-probe').checked) {
+      route.push('probe', 'learning', 'align', 'distilling');
+    }
+    route.push('bet', 'changing', 'release', 'using', 'listen');
+    this.workSegments = [];
+    let previousEnd;
+    for (const id of route) {
+      const layer = this.layer(id);
+      const path = layer.querySelector(layer.classList.contains('activity') ? '.ring' : 'path');
+      const length = path.getTotalLength();
+      const start = path.getPointAtLength(0);
+      if (previousEnd) {
+        const from = previousEnd;
+        const gap = Math.hypot(start.x - from.x, start.y - from.y);
+        if (gap > 0.01) {
+          this.workSegments.push({ id, length: gap, path: {
+            getPointAtLength: distance => ({
+              x: from.x + (start.x - from.x) * distance / gap,
+              y: from.y + (start.y - from.y) * distance / gap,
+            }),
+          } });
+        }
+      }
+      this.workSegments.push({ id, path, length });
+      previousEnd = path.getPointAtLength(length);
+    }
+    this.workLength = this.workSegments.reduce((sum, segment) => sum + segment.length, 0);
+    this.workDistance %= this.workLength;
+  }
+
+  renderWorkItem() {
+    let distance = this.workDistance;
+    let segment = this.workSegments.at(-1);
+    for (const candidate of this.workSegments) {
+      segment = candidate;
+      if (distance <= segment.length) break;
+      distance -= segment.length;
+    }
+    const point = segment.path.getPointAtLength(distance);
+    const next = segment.path.getPointAtLength(Math.min(segment.length, distance + 0.5));
+    const before = segment.path.getPointAtLength(Math.max(0, distance - 0.5));
+    const angle = Math.atan2(next.y - before.y, next.x - before.x) * 180 / Math.PI;
+    const marker = this.shadowRoot.querySelector('#work-item');
+    marker.setAttribute('transform', `translate(${point.x} ${point.y}) rotate(${angle})`);
+    marker.toggleAttribute('hidden', this.layer(segment.id).hasAttribute('hidden'));
+    const label = this.layer(segment.id).querySelector('text').textContent;
+    const status = this.shadowRoot.querySelector('#work-status');
+    if (status.textContent !== label) status.textContent = label;
+    this.shadowRoot.querySelector('#work-progress').value = this.workDistance / this.workLength;
+  }
+
+  playWorkFlow() {
+    this.buildWorkRoute();
+    this.workRunning = true;
+    this.workLastTime = null;
+    const button = this.shadowRoot.querySelector('#work-play');
+    this.shadowRoot.querySelector('#work-play-icon').textContent = 'Ⅱ';
+    button.setAttribute('aria-label', 'Pause work flow');
+    button.title = 'Pause';
+    button.setAttribute('aria-pressed', 'true');
+    this.renderWorkItem();
+    const tick = time => {
+      if (!this.workRunning) return;
+      if (this.workLastTime !== null) {
+        this.workDistance = (this.workDistance + Math.min(time - this.workLastTime, 100) * 0.07) % this.workLength;
+      }
+      this.workLastTime = time;
+      this.renderWorkItem();
+      this.workFrame = requestAnimationFrame(tick);
+    };
+    this.workFrame = requestAnimationFrame(tick);
+  }
+
+  pauseWorkFlow() {
+    this.workRunning = false;
+    if (this.workFrame !== null) cancelAnimationFrame(this.workFrame);
+    this.workFrame = null;
+    this.workLastTime = null;
+    const button = this.shadowRoot.querySelector('#work-play');
+    this.shadowRoot.querySelector('#work-play-icon').textContent = '▶';
+    button.setAttribute('aria-label', 'Play work flow');
+    button.title = 'Play';
+    button.setAttribute('aria-pressed', 'false');
   }
 
   ensureEndFunnels() {
@@ -736,6 +884,7 @@ class SwanHourglass extends HTMLElement {
       for (const transition of ['listen', 'bet', 'release']) this.updateOutsideOrganisation(transition);
     }
     this.updateOutsideOrganisation(name);
+    if (this.workSegments.length && (this.workRunning || this.workDistance > 0)) this.renderWorkItem();
   }
 
   updateGroupButtons() {
