@@ -30,10 +30,10 @@ const content = {
     roleUsing: 'User',
   },
   decisionNames: {
-    align: { team: 'Define', outside: 'Align' },
-    bet: { team: 'Bet', outside: 'Pitch' },
-    release: { team: 'Release', outside: 'Handoff' },
-    listen: { team: 'Listen', outside: 'Briefed' },
+    align: { inside: 'Define', outside: 'Align' },
+    bet: { inside: 'Bet', outside: 'Pitch' },
+    release: { inside: 'Release', outside: 'Handoff' },
+    listen: { inside: 'Listen', outside: 'Briefed' },
   },
   transitions: {
     align: 'Align',
@@ -65,6 +65,18 @@ const itemKeys = new Map(
 );
 const key = name => itemKeys.get(name);
 
+const boundaryTypes = {
+  team: { name: 'Product Team', color: '#f0edff' },
+  user: { name: 'User', color: '#ffe8bf' },
+  organisation: { name: 'Organisation', color: '#dceee8' },
+};
+const boundaryAssignments = [
+  { quadrant: 'bottom-left', activity: 'using', owner: 'user' },
+  { quadrant: 'top-left', activity: 'learning', owner: 'team' },
+  { quadrant: 'top-right', activity: 'distilling', owner: 'team' },
+  { quadrant: 'bottom-right', activity: 'changing', owner: 'team' },
+];
+
 const arrowStyles = {
   align: {
     straight: 'M425 144 H455',
@@ -94,6 +106,8 @@ class SwanHourglass extends HTMLElement {
   constructor() {
     super();
     const root = this.attachShadow({ mode: 'open' });
+    const boundaryColors = Object.fromEntries(Object.entries(boundaryTypes).map(([id, boundary]) => [id, boundary.color]));
+    let nextBoundaryNumber = Object.keys(boundaryColors).length + 1;
     root.innerHTML = `
       <style>
         :host { display: block; color: #242044; font-family: system-ui, sans-serif; }
@@ -130,6 +144,17 @@ class SwanHourglass extends HTMLElement {
         button:focus-visible { outline: 3px solid #7263cb; outline-offset: 3px; }
         .group-toggle { padding: 4px 8px; border-color: transparent; color: #65539f; }
         .gap-control { display: grid; gap: 10px; }
+        .boundary-controls { display: grid; gap: 16px; }
+        .boundary-colors { display: grid; gap: 8px; }
+        .boundary-row { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1.2fr); align-items: center; gap: 10px; font-size: .85rem; }
+        .boundary-row select { min-width: 0; width: 100%; }
+        .boundary-color input[type="text"] { min-width: 0; width: 100%; padding: 6px 8px; border: 1px solid #dcd8eb; border-radius: 6px; font: inherit; }
+        .boundary-color input[type="color"] { flex-shrink: 0; }
+        .boundary-color label { flex: 1; }
+        .boundary-color button { flex-shrink: 0; padding: 4px 9px; }
+        button:disabled { cursor: not-allowed; opacity: .4; }
+        .boundary-color { display: flex; align-items: center; justify-content: space-between; gap: 12px; font-size: .85rem; }
+        input[type="color"] { width: 44px; height: 30px; padding: 2px; border: 1px solid #dcd8eb; border-radius: 6px; background: white; cursor: pointer; }
         .gap-label { display: flex; justify-content: space-between; font-size: .85rem; }
         output { font-variant-numeric: tabular-nums; color: #68627e; }
         input[type="range"] { width: 100%; margin: 0; accent-color: #7162c9; }
@@ -159,10 +184,10 @@ class SwanHourglass extends HTMLElement {
             <marker id="pink-arrow" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="4" markerHeight="4" orient="auto-start-reverse"><path d="M 0 0 L 10 5 L 0 10 Z" fill="#e9008f" /></marker>
             <marker id="green-arrow" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="4" markerHeight="4" orient="auto"><path d="M 0 0 L 10 5 L 0 10 Z" fill="#00a968" /></marker>
           </defs>
-          <path data-quadrant="top-left" clip-path="url(#clip-top-left)" d="M440 111.072 A132 132 0 1 0 389.657 370 H440 Z" fill="#f0edff" />
-          <path data-quadrant="top-right" clip-path="url(#clip-top-right)" d="M440 111.072 A132 132 0 1 1 490.343 370 H440 Z" fill="#ecefff" />
-          <path data-quadrant="bottom-left" clip-path="url(#clip-bottom-left)" d="M440 628.928 A132 132 0 1 1 389.657 370 H440 Z" fill="#f5f2ff" />
-          <path data-quadrant="bottom-right" clip-path="url(#clip-bottom-right)" d="M440 628.928 A132 132 0 1 0 490.343 370 H440 Z" fill="#f0f3ff" />
+          <path data-quadrant="top-left" data-boundary="team" clip-path="url(#clip-top-left)" d="M440 111.072 A132 132 0 1 0 389.657 370 H440 Z" fill="${boundaryTypes.team.color}" />
+          <path data-quadrant="top-right" data-boundary="team" clip-path="url(#clip-top-right)" d="M440 111.072 A132 132 0 1 1 490.343 370 H440 Z" fill="${boundaryTypes.team.color}" />
+          <path data-quadrant="bottom-left" data-boundary="user" clip-path="url(#clip-bottom-left)" d="M440 628.928 A132 132 0 1 1 389.657 370 H440 Z" fill="${boundaryTypes.user.color}" />
+          <path data-quadrant="bottom-right" data-boundary="team" clip-path="url(#clip-bottom-right)" d="M440 628.928 A132 132 0 1 0 490.343 370 H440 Z" fill="${boundaryTypes.team.color}" />
           <path class="axis" d="M440 50V690 M150 370H730" />
           <text class="pole" x="440" y="19">${escapeText(content.poles.top)}</text>
           <text class="pole" x="440" y="748">${escapeText(content.poles.bottom)}</text>
@@ -242,31 +267,70 @@ class SwanHourglass extends HTMLElement {
           </g>
         </svg>
         <div class="controls">
-          <div class="gap-control">
-            <label for="background-shape">Background shape</label>
-            <select id="background-shape">
-              <option value="half-circles" selected>Half-circles</option>
-              <option value="boxes">Boxes</option>
-            </select>
-          </div>
-          <div class="gap-control">
-            <div class="gap-label"><label for="box-gap">Background gap</label><output for="box-gap" id="gap-value">10</output></div>
-            <input id="box-gap" type="range" min="0" max="50" step="5" value="10" aria-describedby="gap-hint">
-            <p class="hint" id="gap-hint">Cuts a centered gap out of the backgrounds in SVG units. Nothing moves.</p>
-          </div>
           ${this.controls('Activities', activities)}
           ${this.controls('Roles', roles)}
           ${this.controls('Transitions', transitions)}
           ${this.controls('Shortcut transitions', shortcuts)}
           <div role="group" aria-label="Transition decision authority">
             <div class="control-heading"><h2>Decision</h2></div>
-            <div class="buttons">${Object.entries(arrowStyles).map(([id, style]) => `<button type="button" data-arrow="${id}" aria-pressed="${style.defaultCurved}" aria-label="Outside decision for ${escapeText(content.transitions[id])}">${escapeText(content.decisionNames[id][style.defaultCurved ? 'outside' : 'team'])}: ${style.defaultCurved ? 'Outside' : 'Team'}</button>`).join('')}</div>
-            <p class="hint">Team: straight arrow. Outside: outward arrow.</p>
+            <div class="buttons">${Object.entries(arrowStyles).map(([id, style]) => `<button type="button" data-arrow="${id}" aria-pressed="${style.defaultCurved}" aria-label="Outside decision for ${escapeText(content.transitions[id])}">${escapeText(content.decisionNames[id][style.defaultCurved ? 'outside' : 'inside'])}: ${style.defaultCurved ? 'Outside' : 'Inside'}</button>`).join('')}</div>
+            <p class="hint">Inside: straight arrow. Outside: outward arrow.</p>
+          </div>
+          <div class="boundary-controls" role="group" aria-label="Team boundaries">
+            <div class="control-heading"><h2>Team boundaries</h2><button type="button" id="add-boundary" aria-label="Add team boundary" title="Add team boundary">+</button></div>
+            <div class="boundary-colors">
+              ${Object.entries(boundaryTypes).map(([id, boundary]) => `<div class="boundary-color" data-boundary-row="${id}"><input type="text" data-boundary-name="${id}" value="${escapeText(boundary.name)}" aria-label="Name for ${escapeText(boundary.name)} boundary"><input type="color" id="boundary-color-${id}" data-boundary-color="${id}" value="${boundary.color}" aria-label="Color for ${escapeText(boundary.name)} boundary"><button type="button" data-remove-boundary="${id}" aria-label="Remove ${boundary.name} boundary">−</button></div>`).join('')}
+            </div>
+            ${boundaryAssignments.map(({ quadrant, activity, owner }) => `<div class="boundary-row">
+              <label for="owner-${quadrant}">${escapeText(content.activities[activity])}</label>
+              <select id="owner-${quadrant}" data-boundary-owner="${quadrant}">
+                ${Object.entries(boundaryTypes).map(([id, boundary]) => `<option value="${id}"${id === owner ? ' selected' : ''}>${boundary.name}</option>`).join('')}
+              </select>
+            </div>`).join('')}
+          <div class="boundary-row">
+            <label for="background-shape">Boundary shape</label>
+            <select id="background-shape">
+              <option value="half-circles" selected>Half-circles</option>
+              <option value="boxes">Boxes</option>
+            </select>
+          </div>
+          <div class="gap-control">
+            <div class="gap-label"><label for="box-gap">Boundary gap</label><output for="box-gap" id="gap-value">10</output></div>
+            <input id="box-gap" type="range" min="0" max="50" step="5" value="10" aria-describedby="gap-hint">
+            <p class="hint" id="gap-hint">Cuts a gap only between different boundaries, in SVG units. Shapes assigned to the same boundary touch.</p>
+          </div>
           </div>
           <p class="hint">Toggle any element to explore the model. The quadrants stay visible.</p>
         </div>
       </section>
     `;
+    this.updateBoundaryGap();
+    root.addEventListener('input', event => {
+      const nameId = event.target.dataset.boundaryName;
+      if (nameId) {
+        const name = event.target.value.trim() || 'Unnamed boundary';
+        root.querySelector(`[data-boundary-color="${nameId}"]`).setAttribute('aria-label', `Color for ${name} boundary`);
+        root.querySelector(`[data-remove-boundary="${nameId}"]`).setAttribute('aria-label', `Remove ${name} boundary`);
+        for (const select of root.querySelectorAll('[data-boundary-owner]')) {
+          select.querySelector(`option[value="${nameId}"]`).textContent = name;
+        }
+        return;
+      }
+      const owner = event.target.dataset.boundaryColor;
+      if (!owner) return;
+      boundaryColors[owner] = event.target.value;
+      for (const shape of root.querySelectorAll(`[data-quadrant][data-boundary="${owner}"]`)) {
+        shape.setAttribute('fill', boundaryColors[owner]);
+      }
+    });
+    root.addEventListener('change', event => {
+      const quadrant = event.target.dataset.boundaryOwner;
+      if (!quadrant) return;
+      const shape = root.querySelector(`[data-quadrant="${quadrant}"]`);
+      shape.dataset.boundary = event.target.value;
+      shape.setAttribute('fill', boundaryColors[event.target.value]);
+      this.updateBoundaryGap();
+    });
     root.querySelector('#background-shape').addEventListener('change', event => {
       const paths = event.target.value === 'boxes'
         ? {
@@ -285,22 +349,69 @@ class SwanHourglass extends HTMLElement {
         background.setAttribute('d', paths[background.dataset.quadrant]);
       }
     });
-    root.querySelector('#box-gap').addEventListener('input', event => {
-      const gap = Number(event.target.value);
-      const offset = gap / 2;
-      for (const clip of root.querySelectorAll('[data-gap-clip]')) {
-        const left = clip.dataset.gapClip.endsWith('left');
-        const top = clip.dataset.gapClip.startsWith('top');
-        clip.setAttribute('x', String(left ? 0 : 440 + offset));
-        clip.setAttribute('y', String(top ? -20 : 370 + offset));
-        clip.setAttribute('width', String(440 - offset));
-        clip.setAttribute('height', String((top ? 390 : 370) - offset));
-      }
-      root.querySelector('#gap-value').value = String(gap);
-    });
+    root.querySelector('#box-gap').addEventListener('input', () => this.updateBoundaryGap());
     root.addEventListener('click', event => {
       const button = event.target.closest('button');
       if (!button) return;
+      if (button.dataset.removeBoundary) {
+        const id = button.dataset.removeBoundary;
+        if (Object.keys(boundaryColors).length <= 1) return;
+        delete boundaryColors[id];
+        const fallback = Object.hasOwn(boundaryColors, 'team') ? 'team' : Object.keys(boundaryColors)[0];
+        for (const select of root.querySelectorAll('[data-boundary-owner]')) {
+          if (select.value === id) {
+            select.value = fallback;
+            const shape = root.querySelector(`[data-quadrant="${select.dataset.boundaryOwner}"]`);
+            shape.dataset.boundary = fallback;
+            shape.setAttribute('fill', boundaryColors[fallback]);
+          }
+          select.querySelector(`option[value="${id}"]`).remove();
+        }
+        root.querySelector(`[data-boundary-row="${id}"]`).remove();
+        this.updateBoundaryGap();
+        for (const removeButton of root.querySelectorAll('[data-remove-boundary]')) {
+          removeButton.disabled = Object.keys(boundaryColors).length === 1;
+        }
+        return;
+      }
+      if (button.id === 'add-boundary') {
+        const number = nextBoundaryNumber++;
+        const id = `boundary-${number}`;
+        const name = `Boundary ${number}`;
+        boundaryColors[id] = '#e4e9f2';
+        const row = document.createElement('div');
+        row.className = 'boundary-color';
+        row.dataset.boundaryRow = id;
+        const nameInput = document.createElement('input');
+        nameInput.type = 'text';
+        nameInput.value = name;
+        nameInput.dataset.boundaryName = id;
+        nameInput.setAttribute('aria-label', `Name for boundary ${number}`);
+        const colorInput = document.createElement('input');
+        colorInput.type = 'color';
+        colorInput.value = boundaryColors[id];
+        colorInput.dataset.boundaryColor = id;
+        colorInput.setAttribute('aria-label', `Color for boundary ${number}`);
+        const removeButton = document.createElement('button');
+        removeButton.type = 'button';
+        removeButton.dataset.removeBoundary = id;
+        removeButton.setAttribute('aria-label', `Remove boundary ${number}`);
+        removeButton.textContent = '−';
+        row.append(nameInput, colorInput, removeButton);
+        root.querySelector('.boundary-colors').append(row);
+        for (const select of root.querySelectorAll('[data-boundary-owner]')) {
+          const option = document.createElement('option');
+          option.value = id;
+          option.textContent = name;
+          select.append(option);
+        }
+        for (const removeButton of root.querySelectorAll('[data-remove-boundary]')) {
+          removeButton.disabled = false;
+        }
+        nameInput.focus();
+        nameInput.select();
+        return;
+      }
       if (button.dataset.arrow) {
         const id = button.dataset.arrow;
         const curved = button.getAttribute('aria-pressed') !== 'true';
@@ -314,12 +425,12 @@ class SwanHourglass extends HTMLElement {
           layer.querySelector('text').setAttribute('x', String(textX));
         }
         button.setAttribute('aria-pressed', String(curved));
-        const name = content.decisionNames[id][curved ? 'outside' : 'team'];
+        const name = content.decisionNames[id][curved ? 'outside' : 'inside'];
         layer.querySelector('text').textContent = name;
         const visibilityButton = root.querySelector(`[data-item="${id}"]`);
         visibilityButton.textContent = name;
         visibilityButton.setAttribute('aria-label', `Show ${name}`);
-        button.textContent = `${name}: ${curved ? 'Outside' : 'Team'}`;
+        button.textContent = `${name}: ${curved ? 'Outside' : 'Inside'}`;
       } else if (button.dataset.item) {
         this.setVisible(button.dataset.item, button.getAttribute('aria-pressed') !== 'true');
       } else {
@@ -329,6 +440,29 @@ class SwanHourglass extends HTMLElement {
       }
       this.updateGroupButtons();
     });
+  }
+
+  updateBoundaryGap() {
+    const root = this.shadowRoot;
+    const gap = Number(root.querySelector('#box-gap').value);
+    const owners = Object.fromEntries(
+      [...root.querySelectorAll('[data-quadrant]')].map(shape => [shape.dataset.quadrant, shape.dataset.boundary]),
+    );
+    for (const clip of root.querySelectorAll('[data-gap-clip]')) {
+      const quadrant = clip.dataset.gapClip;
+      const [vertical, horizontal] = quadrant.split('-');
+      const left = horizontal === 'left';
+      const top = vertical === 'top';
+      const horizontalNeighbour = `${vertical}-${left ? 'right' : 'left'}`;
+      const verticalNeighbour = `${top ? 'bottom' : 'top'}-${horizontal}`;
+      const xGap = owners[quadrant] === owners[horizontalNeighbour] ? 0 : gap / 2;
+      const yGap = owners[quadrant] === owners[verticalNeighbour] ? 0 : gap / 2;
+      clip.setAttribute('x', String(left ? 0 : 440 + xGap));
+      clip.setAttribute('y', String(top ? -20 : 370 + yGap));
+      clip.setAttribute('width', String(440 - xGap));
+      clip.setAttribute('height', String((top ? 390 : 370) - yGap));
+    }
+    root.querySelector('#gap-value').value = String(gap);
   }
 
   controls(title, names) {
