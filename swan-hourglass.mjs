@@ -157,7 +157,7 @@ class SwanHourglass extends HTMLElement {
         :host { display: block; color: #242044; font-family: system-ui, sans-serif; }
         * { box-sizing: border-box; }
         .card { display: grid; grid-template-columns: 580px minmax(0, 1fr); align-items: start; overflow: hidden; border: 1px solid #e1dfeb; border-radius: 20px; background: white; box-shadow: 0 12px 40px #24204408; }
-        svg { display: block; grid-column: 2; grid-row: 1; align-self: start; width: 100%; height: auto; }
+        svg { display: block; grid-column: 2; grid-row: 1; align-self: start; width: 100%; height: auto; max-height: calc(100dvh - 160px); }
         svg text { fill: #242044; text-anchor: middle; dominant-baseline: middle; }
         .axis { stroke: #aba6c7; stroke-width: 1.5; stroke-dasharray: 5 7; }
         .space { font-size: 19px; font-weight: 700; }
@@ -186,7 +186,7 @@ class SwanHourglass extends HTMLElement {
         .shortcut path { stroke: #00a968; }
         .shortcut rect { fill: #00a968; }
         [hidden] { display: none !important; }
-        .controls { grid-column: 1; grid-row: 1; align-self: stretch; align-content: start; min-width: 0; border-right: 1px solid #e1dfeb; padding: 16px; display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 20px; }
+        .controls { max-height: calc(100dvh - 160px); overflow-y: auto; grid-column: 1; grid-row: 1; align-self: stretch; align-content: start; min-width: 0; border-right: 1px solid #e1dfeb; padding: 16px; display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 20px; }
         .other-controls { grid-column: 2; grid-row: 1; display: grid; align-content: start; gap: 22px; min-width: 0; }
         .control-heading { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-bottom: 10px; }
         h2 { margin: 0; font-size: .85rem; letter-spacing: .08em; text-transform: uppercase; }
@@ -219,7 +219,7 @@ class SwanHourglass extends HTMLElement {
         @media (max-width: 1100px) {
           .card { grid-template-columns: minmax(0, 1fr); }
           svg { grid-column: 1; }
-          .controls { grid-row: 2; border-right: 0; border-top: 1px solid #e1dfeb; padding: 16px; }
+          .controls { grid-row: 2; max-height: none; overflow-y: visible; border-right: 0; border-top: 1px solid #e1dfeb; padding: 16px; }
         }
         @media (max-width: 600px) {
           .controls { grid-template-columns: minmax(0, 1fr); }
