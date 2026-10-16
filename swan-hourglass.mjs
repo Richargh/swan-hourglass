@@ -605,6 +605,10 @@ class SwanHourglass extends HTMLElement {
         </div>
     `;
     this.updateBoundaryGap();
+    for (const name of ['probe', ...Object.keys(content.flightLevels), 'sandObvious', 'sandEasy', 'sandPossible']) {
+      this.setVisible(name, false);
+    }
+    this.updateGroupButtons();
     root.addEventListener('input', event => {
       if (event.target.id === 'sand-color') {
         this.style.setProperty('--sand-color', event.target.value);
