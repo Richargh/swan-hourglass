@@ -3,6 +3,11 @@
 const content = {
   license: 'CC-BY-SA-4.0',
   licenseUrl: 'https://creativecommons.org/licenses/by-sa/4.0/',
+  author: 'Richard Groß',
+  authorUrl: 'https://richargh.de',
+  attributionTitle: 'Swan Hourglass',
+  sourceUrl: 'https://github.com/Richargh/swan-hourglass',
+  licenseLabel: 'CC BY-SA 4.0',
   title: '(Black) Swan Hourglass',
   description: 'Problem space on the left, solution space on the right; idea space above, decision space below. Learning and distilling form the upper ring. Using and changing form the lower ring. Align, bet, release, and listen connect the activities. A green shortcut probes a solution from Distilling to Learning. Roles: Domain Expert for Learning, Analyst for Distilling, Engineer for Changing, and User for Using. Align reaches into the organisational Coordination level above the hourglass, with Strategy above Coordination. Two rocks, too large to pass through the neck, are refined into a sand trickle. Below, the sand layers are Obvious (thin), Easy (medium), and Possible (thickest), from top to bottom.',
   product: {
@@ -194,6 +199,9 @@ class SwanHourglass extends HTMLElement {
         svg[data-hatching] .activity-hatched { display: inline; }
         svg[data-hatching] .ring { visibility: hidden; }
         .flow-legend text { font-size: 17px; fill: #68627e; }
+        .attribution { text-anchor: end; font-size: 12px; fill: #777187; }
+        .attribution a { fill: inherit; }
+        .attribution a:hover { text-decoration: underline; }
         .sand-label { font-size: 12px; font-weight: 600; fill: #5b431e; }
         .rock { fill: var(--sand-color); stroke: color-mix(in srgb, var(--sand-color), black 20%); stroke-width: 1.5; stroke-linejoin: round; }
         .sand-possible { fill: var(--sand-color); }
@@ -281,7 +289,18 @@ class SwanHourglass extends HTMLElement {
         <svg data-end-funnels viewBox="0 -90 880 1000" role="img" aria-labelledby="diagram-title diagram-description">
           <title id="diagram-title">${escapeText(content.title)}</title>
           <desc id="diagram-description">${escapeText(content.description)}</desc>
-          <metadata><rdf:RDF xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#" xmlns:cc="http://creativecommons.org/ns#"><cc:Work rdf:about=""><cc:license rdf:resource="${escapeText(content.licenseUrl)}" /></cc:Work></rdf:RDF></metadata>
+          <metadata>
+            <rdf:RDF xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#" xmlns:cc="http://creativecommons.org/ns#" xmlns:dc="http://purl.org/dc/elements/1.1/">
+              <cc:Work rdf:about="">
+                <dc:title>${escapeText(content.title)}</dc:title>
+                <dc:creator><cc:Agent rdf:about="${escapeText(content.authorUrl)}"><dc:title>${escapeText(content.author)}</dc:title></cc:Agent></dc:creator>
+                <dc:source rdf:resource="${escapeText(content.sourceUrl)}" />
+                <cc:attributionName>${escapeText(content.author)}</cc:attributionName>
+                <cc:attributionURL rdf:resource="${escapeText(content.sourceUrl)}" />
+                <cc:license rdf:resource="${escapeText(content.licenseUrl)}" />
+              </cc:Work>
+            </rdf:RDF>
+          </metadata>
           <defs>
             <path id="sand-shape" d="M313.811 540 H566.189 A100.133 100.133 0 0 1 455.945 609.569 H424.055 A100.133 100.133 0 0 1 313.811 540 Z" />
             <clipPath id="sand-obvious"><rect x="300" y="540" width="280" height="14" /></clipPath>
@@ -444,6 +463,7 @@ class SwanHourglass extends HTMLElement {
             </g>
             <text x="470" y="875">${escapeText(content.legend.flow)}</text>
           </g>
+          <text class="attribution" x="720" y="779"><a href="${escapeText(content.sourceUrl)}" target="_blank" rel="noopener noreferrer">${escapeText(content.attributionTitle)}</a><tspan> by </tspan><a href="${escapeText(content.authorUrl)}" target="_blank" rel="noopener noreferrer">${escapeText(content.author)}</a><tspan> · </tspan><a href="${escapeText(content.licenseUrl)}" target="_blank" rel="noopener noreferrer">${escapeText(content.licenseLabel)}</a></text>
         </svg>
         <div class="controls">
           <div class="other-controls">
