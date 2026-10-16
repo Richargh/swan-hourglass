@@ -157,7 +157,7 @@ class SwanHourglass extends HTMLElement {
         :host { display: block; color: #242044; font-family: system-ui, sans-serif; }
         * { box-sizing: border-box; }
         .card { display: grid; grid-template-columns: 300px minmax(0, 1fr); align-items: start; overflow: hidden; border: 1px solid #e1dfeb; border-radius: 20px; background: white; box-shadow: 0 12px 40px #24204408; }
-        svg { display: block; grid-column: 2; grid-row: 1; align-self: center; width: 100%; height: auto; }
+        svg { display: block; grid-column: 2; grid-row: 1; align-self: start; width: 100%; height: auto; }
         svg text { fill: #242044; text-anchor: middle; dominant-baseline: middle; }
         .axis { stroke: #aba6c7; stroke-width: 1.5; stroke-dasharray: 5 7; }
         .space { font-size: 19px; font-weight: 700; }
