@@ -190,6 +190,11 @@ class SwanHourglass extends HTMLElement {
         .other-controls { grid-column: 2; grid-row: 1; display: grid; align-content: start; gap: 22px; min-width: 0; }
         .control-heading { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-bottom: 10px; }
         h2 { margin: 0; font-size: .85rem; letter-spacing: .08em; text-transform: uppercase; }
+        details { min-width: 0; border-bottom: 1px solid #e1dfeb; padding-bottom: 14px; }
+        summary { cursor: pointer; font-size: .85rem; font-weight: 700; letter-spacing: .08em; text-transform: uppercase; }
+        summary:focus-visible { outline: 3px solid #7263cb; outline-offset: 3px; }
+        .section-body { margin-top: 14px; }
+        .section-body > .control-heading { justify-content: flex-end; }
         .buttons { display: flex; flex-wrap: wrap; gap: 8px; }
         button { font: inherit; cursor: pointer; border: 1px solid #dcd8eb; border-radius: 8px; background: white; color: #68627e; padding: 8px 13px; font-size: .85rem; }
         button[aria-pressed="true"] { background: #f0ecff; border-color: #a99cde; color: #4a358d; }
@@ -352,8 +357,9 @@ class SwanHourglass extends HTMLElement {
         <div class="controls">
           <div class="other-controls">
           ${this.controls('Activities', activities)}
-          <div class="gap-control" role="group" aria-label="Activity flow">
-            <h2>Activity flow</h2>
+          <details>
+            <summary>Activity flow</summary>
+            <div class="gap-control section-body" role="group" aria-label="Activity flow">
             <div class="buttons">
               <button type="button" id="hatching-toggle" aria-pressed="false">Show diverge/converge</button>
               <button type="button" id="funnels-toggle" aria-pressed="true">Queues</button>
@@ -363,20 +369,25 @@ class SwanHourglass extends HTMLElement {
               <input id="queue-${id}" data-queue="${id}" type="range" min="1" max="10" step="1" value="1" aria-describedby="queue-hint">
             </div>`).join('')}
             <p class="hint" id="queue-hint">Queue capacity: 1–10 items. Larger queues widen the queue shape. Diverge/converge marks the first half with hatching.</p>
-          </div>
+            </div>
+          </details>
           ${this.controls('Roles', roles)}
           ${this.controls('Transitions', transitions)}
           ${this.controls('Shortcut transitions', shortcuts)}
-          <div role="group" aria-label="Transition decision authority">
-            <div class="control-heading"><h2>Decision</h2></div>
+          <details open>
+            <summary>Transition Decision</summary>
+            <div class="section-body gap-control" role="group" aria-label="Transition decision authority">
             <div class="buttons">${Object.entries(arrowStyles).map(([id, style]) => `<button type="button" data-arrow="${id}" aria-pressed="${style.defaultCurved}" aria-label="Outside decision for ${escapeText(content.transitions[id])}">${escapeText(content.decisionNames[id][style.defaultCurved ? 'outside' : 'inside'])}: ${style.defaultCurved ? 'Outside' : 'Inside'}</button>`).join('')}</div>
             <p class="hint">Inside: straight arrow. Outside: outward arrow.</p>
-          </div>
+            </div>
+          </details>
           <p class="hint">Toggle any element to explore the model. The quadrants stay visible.</p>
           </div>
           <div class="boundary-controls">
-            <div role="group" aria-label="Team boundaries" class="gap-control">
-            <div class="control-heading"><h2>Team boundaries</h2><button type="button" id="add-boundary" aria-label="Add team boundary" title="Add team boundary">+</button></div>
+            <details open>
+            <summary>Team boundaries</summary>
+            <div role="group" aria-label="Team boundaries" class="gap-control section-body">
+            <div class="control-heading"><button type="button" id="add-boundary" aria-label="Add team boundary" title="Add team boundary">+</button></div>
             <div class="boundary-colors">
               ${Object.entries(boundaryTypes).map(([id, boundary]) => `<div class="boundary-color" data-boundary-row="${id}"><input type="text" data-boundary-name="${id}" value="${escapeText(boundary.name)}" aria-label="Name for ${escapeText(boundary.name)} boundary"><input type="color" id="boundary-color-${id}" data-boundary-color="${id}" value="${boundary.color}" aria-label="Color for ${escapeText(boundary.name)} boundary"><button type="button" data-remove-boundary="${id}" aria-label="Remove ${boundary.name} boundary">−</button></div>`).join('')}
             </div>
@@ -399,6 +410,7 @@ class SwanHourglass extends HTMLElement {
             <p class="hint" id="gap-hint">Cuts a gap only between different boundaries, in SVG units. Shapes assigned to the same boundary touch.</p>
           </div>
           </div>
+            </details>
             ${this.controls('Horizons', flightLevels)}
           </div>
         </div>
@@ -626,10 +638,13 @@ class SwanHourglass extends HTMLElement {
 
   controls(title, names) {
     const group = title.toLowerCase().replaceAll(' ', '-');
-    return `<div role="group" aria-label="${title} visibility">
-      <div class="control-heading"><h2>${title}</h2><button type="button" class="group-toggle" data-group="${group}">Hide all ${title.toLowerCase()}</button></div>
-      <div class="buttons">${names.map(name => `<button type="button" data-kind="${group}" data-item="${key(name)}" aria-pressed="true" aria-label="Show ${escapeText(name)}">${escapeText(name)}</button>`).join('')}</div>
-    </div>`;
+    return `<details open>
+      <summary>${title}</summary>
+      <div class="section-body" role="group" aria-label="${title} visibility">
+        <div class="control-heading"><button type="button" class="group-toggle" data-group="${group}">Hide all ${title.toLowerCase()}</button></div>
+        <div class="buttons">${names.map(name => `<button type="button" data-kind="${group}" data-item="${key(name)}" aria-pressed="true" aria-label="Show ${escapeText(name)}">${escapeText(name)}</button>`).join('')}</div>
+      </div>
+    </details>`;
   }
 
   layer(name) {
