@@ -4,7 +4,7 @@ const content = {
   license: 'CC-BY-SA-4.0',
   licenseUrl: 'https://creativecommons.org/licenses/by-sa/4.0/',
   title: '(Black) Swan Hourglass',
-  description: 'Problem space on the left, solution space on the right; idea space above, decision space below. Learning and distilling form the upper ring. Using and changing form the lower ring. Align, bet, release, and listen connect the activities. Green shortcuts probe a solution from Distilling to Learning, or propose one from Learning or Using to Distilling.',
+  description: 'Problem space on the left, solution space on the right; idea space above, decision space below. Learning and distilling form the upper ring. Using and changing form the lower ring. Align, bet, release, and listen connect the activities. A green shortcut probes a solution from Distilling to Learning.',
   legend: {
     rightThing: 'build the right thing',
     thingRight: 'build the thing right',
@@ -29,20 +29,23 @@ const content = {
     release: { team: 'Release', outside: 'Handoff' },
     listen: { team: 'Listen', outside: 'Briefed' },
   },
-  shortcutLabel: 'Propose',
   transitions: {
     align: 'Align',
     bet: 'Bet',
     release: 'Release',
     listen: 'Listen',
     probe: 'Probe',
-    propose: 'Propose from learning',
-    proposeFromUse: 'Propose from use',
   },
 };
 
 const activities = Object.values(content.activities);
-const transitions = Object.values(content.transitions);
+const transitions = ['align', 'bet', 'release', 'listen'].map(id => content.transitions[id]);
+const shortcuts = ['probe'].map(id => content.transitions[id]);
+const visibilityGroups = {
+  activities,
+  transitions,
+  'shortcut-transitions': shortcuts,
+};
 const escapeText = text => text
     .replaceAll('&', '&amp;')
     .replaceAll('<', '&lt;')
@@ -112,7 +115,7 @@ class SwanHourglass extends HTMLElement {
         button { font: inherit; cursor: pointer; border: 1px solid #dcd8eb; border-radius: 8px; background: white; color: #68627e; padding: 8px 13px; font-size: .85rem; }
         button[aria-pressed="true"] { background: #f0ecff; border-color: #a99cde; color: #4a358d; }
         button[data-kind="transitions"][aria-pressed="true"] { background: #fff0f8; border-color: #ef9bce; color: #ac006a; }
-        button:is([data-item="probe"], [data-item="propose"], [data-item="proposeFromUse"])[aria-pressed="true"] { background: #eafaef; border-color: #81cfa9; color: #007847; }
+        button[data-item="probe"][aria-pressed="true"] { background: #eafaef; border-color: #81cfa9; color: #007847; }
         button:hover { filter: brightness(.96); }
         button:focus-visible { outline: 3px solid #7263cb; outline-offset: 3px; }
         .group-toggle { padding: 4px 8px; border-color: transparent; color: #65539f; }
@@ -194,18 +197,6 @@ class SwanHourglass extends HTMLElement {
             <rect x="299" y="364.5" width="76" height="31" rx="6" />
             <text x="337" y="380">${escapeText(content.transitions.listen)}</text>
           </g>
-          <g data-layer="propose" class="transition shortcut">
-            <title>${escapeText(content.transitions.propose)}</title>
-            <path d="M425 144 C510 185 535 290 486 355" marker-end="url(#green-arrow)" />
-            <rect x="357" y="194" width="96" height="31" rx="6" />
-            <text x="405" y="210">${escapeText(content.shortcutLabel)}</text>
-          </g>
-          <g data-layer="proposeFromUse" class="transition shortcut">
-            <title>${escapeText(content.transitions.proposeFromUse)}</title>
-            <path d="M394 405 Q450 410 486 355" marker-end="url(#green-arrow)" />
-            <rect x="392" y="428" width="96" height="31" rx="6" />
-            <text x="440" y="444">${escapeText(content.shortcutLabel)}</text>
-          </g>
           <g data-layer="probe" class="transition shortcut">
             <path d="M486 355 C455.333 359.505 424.667 359.505 394 355" marker-end="url(#green-arrow)" />
             <rect x="402" y="291" width="76" height="31" rx="6" />
@@ -234,6 +225,7 @@ class SwanHourglass extends HTMLElement {
           </div>
           ${this.controls('Activities', activities)}
           ${this.controls('Transitions', transitions)}
+          ${this.controls('Shortcut transitions', shortcuts)}
           <div role="group" aria-label="Transition decision authority">
             <div class="control-heading"><h2>Decision</h2></div>
             <div class="buttons">${Object.entries(arrowStyles).map(([id, style]) => `<button type="button" data-arrow="${id}" aria-pressed="${style.defaultCurved}" aria-label="Outside decision for ${escapeText(content.transitions[id])}">${escapeText(content.decisionNames[id][style.defaultCurved ? 'outside' : 'team'])}: ${style.defaultCurved ? 'Outside' : 'Team'}</button>`).join('')}</div>
@@ -299,7 +291,7 @@ class SwanHourglass extends HTMLElement {
       } else if (button.dataset.item) {
         this.setVisible(button.dataset.item, button.getAttribute('aria-pressed') !== 'true');
       } else {
-        const names = button.dataset.group === 'activities' ? activities : transitions;
+        const names = visibilityGroups[button.dataset.group];
         const allVisible = names.every(name => !this.layer(key(name)).hasAttribute('hidden'));
         names.forEach(name => this.setVisible(key(name), !allVisible));
       }
@@ -308,9 +300,9 @@ class SwanHourglass extends HTMLElement {
   }
 
   controls(title, names) {
-    const group = title.toLowerCase();
+    const group = title.toLowerCase().replaceAll(' ', '-');
     return `<div role="group" aria-label="${title} visibility">
-      <div class="control-heading"><h2>${title}</h2><button type="button" class="group-toggle" data-group="${group}">Hide all ${group}</button></div>
+      <div class="control-heading"><h2>${title}</h2><button type="button" class="group-toggle" data-group="${group}">Hide all ${title.toLowerCase()}</button></div>
       <div class="buttons">${names.map(name => `<button type="button" data-kind="${group}" data-item="${key(name)}" aria-pressed="true" aria-label="Show ${escapeText(name)}">${escapeText(name)}</button>`).join('')}</div>
     </div>`;
   }
@@ -325,9 +317,9 @@ class SwanHourglass extends HTMLElement {
   }
 
   updateGroupButtons() {
-    for (const [group, names] of [['activities', activities], ['transitions', transitions]]) {
+    for (const [group, names] of Object.entries(visibilityGroups)) {
       const allVisible = names.every(name => !this.layer(key(name)).hasAttribute('hidden'));
-      this.shadowRoot.querySelector(`[data-group="${group}"]`).textContent = `${allVisible ? 'Hide' : 'Show'} all ${group}`;
+      this.shadowRoot.querySelector(`[data-group="${group}"]`).textContent = `${allVisible ? 'Hide' : 'Show'} all ${group.replaceAll('-', ' ')}`;
     }
   }
 }
