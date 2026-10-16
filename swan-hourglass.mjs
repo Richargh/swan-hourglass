@@ -337,7 +337,9 @@ class SwanHourglass extends HTMLElement {
             <path class="rock" d="M440 223 L470 206 L510 218 L540 242 L515 264 L465 267 L435 244 Z" />
           </g>
           <g data-layer="trickle">
-            <path class="sand-trickle" d="M437 286 Q443 345 439 405 T440 540" />
+            <path class="sand-trickle" d="M380 232 C370 290 382 330 440 340" />
+            <path class="sand-trickle" d="M500 270 C508 295 498 327 440 340" />
+            <path class="sand-trickle" d="M440 340 Q437 425 440 540" />
           </g>
           <g data-layer="sand">
             <use class="sand-possible" href="#sand-shape" />
