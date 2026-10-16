@@ -4,7 +4,7 @@ const content = {
   license: 'CC-BY-SA-4.0',
   licenseUrl: 'https://creativecommons.org/licenses/by-sa/4.0/',
   title: '(Black) Swan Hourglass',
-  description: 'Problem space on the left, solution space on the right; idea space above, decision space below. Learning and distilling form the upper ring. Using and changing form the lower ring. Align, bet, release, and listen connect the activities. A green shortcut probes a solution from Distilling to Learning. Roles: Domain Expert for Learning, Analyst for Distilling, Engineer for Changing, and User for Using.',
+  description: 'Problem space on the left, solution space on the right; idea space above, decision space below. Learning and distilling form the upper ring. Using and changing form the lower ring. Align, bet, release, and listen connect the activities. A green shortcut probes a solution from Distilling to Learning. Roles: Domain Expert for Learning, Analyst for Distilling, Engineer for Changing, and User for Using. Align reaches into the organisational Coordination level above the hourglass, with Strategy above Coordination.',
   legend: {
     rightThing: 'build the right thing',
     thingRight: 'build the thing right',
@@ -23,6 +23,10 @@ const content = {
     distilling: 'Distilling',
     changing: 'Changing',
     using: 'Using',
+  },
+  flightLevels: {
+    coordination: 'Coordination',
+    strategy: 'Strategy',
   },
   roles: {
     roleLearning: 'Domain Expert',
@@ -49,11 +53,13 @@ const activities = Object.values(content.activities);
 const transitions = ['align', 'bet', 'release', 'listen'].map(id => content.transitions[id]);
 const shortcuts = ['probe'].map(id => content.transitions[id]);
 const roles = Object.values(content.roles);
+const flightLevels = Object.values(content.flightLevels);
 const visibilityGroups = {
   activities,
   roles,
   transitions,
   'shortcut-transitions': shortcuts,
+  horizons: flightLevels,
 };
 const escapeText = text => text
     .replaceAll('&', '&amp;')
@@ -61,7 +67,7 @@ const escapeText = text => text
     .replaceAll('>', '&gt;')
     .replaceAll('"', '&quot;');
 const itemKeys = new Map(
-  Object.entries({ ...content.activities, ...content.transitions, ...content.roles })
+  Object.entries({ ...content.activities, ...content.transitions, ...content.roles, ...content.flightLevels })
       .map(([id, label]) => [label, id]),
 );
 const key = name => itemKeys.get(name);
@@ -81,7 +87,7 @@ const boundaryAssignments = [
 const arrowStyles = {
   align: {
     straight: 'M425 144 H455',
-    curved: 'M425 144 V120 C425 96 455 96 455 120 V144',
+    curved: 'M425 144 V82 C425 58 455 58 455 82 V144',
     defaultCurved: true,
   },
   release: {
@@ -156,6 +162,7 @@ class SwanHourglass extends HTMLElement {
         .axis { stroke: #aba6c7; stroke-width: 1.5; stroke-dasharray: 5 7; }
         .space { font-size: 19px; font-weight: 700; }
         .pole { font-size: 18px; font-weight: 600; }
+        .flight-label { font-size: 14px; font-weight: 600; paint-order: stroke; stroke: white; stroke-width: 4px; stroke-linejoin: round; }
         .ring { fill: none; stroke: #7162c9; stroke-width: 13; }
         .activity-end-funnel { display: none; fill: #7162c9; pointer-events: none; }
         [data-layer="changing"] .activity-end-funnel { fill: #0030FF; }
@@ -215,11 +222,13 @@ class SwanHourglass extends HTMLElement {
         }
       </style>
       <section class="card" aria-label="Interactive Swan Hourglass">
-        <svg data-end-funnels viewBox="0 -20 880 930" role="img" aria-labelledby="diagram-title diagram-description">
+        <svg data-end-funnels viewBox="0 -90 880 1000" role="img" aria-labelledby="diagram-title diagram-description">
           <title id="diagram-title">${escapeText(content.title)}</title>
           <desc id="diagram-description">${escapeText(content.description)}</desc>
           <metadata><rdf:RDF xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#" xmlns:cc="http://creativecommons.org/ns#"><cc:Work rdf:about=""><cc:license rdf:resource="${escapeText(content.licenseUrl)}" /></cc:Work></rdf:RDF></metadata>
           <defs>
+            <clipPath id="strategy-slice"><rect x="300" y="40" width="280" height="30" /></clipPath>
+            <clipPath id="coordination-slice"><rect x="300" y="70" width="280" height="31" /></clipPath>
             ${[['purple', '#7162c9'], ['blue', '#0030FF']].map(([id, color]) => `<pattern id="hatch-${id}" patternUnits="userSpaceOnUse" width="6" height="6">
               <path d="M-1 1 L1 -1 M0 6 L6 0 M5 7 L7 5" fill="none" stroke="${color}" stroke-width="2.5" />
             </pattern>`).join('')}
@@ -238,8 +247,14 @@ class SwanHourglass extends HTMLElement {
           <path data-quadrant="top-right" data-boundary="team" clip-path="url(#clip-top-right)" d="M440 111.072 A132 132 0 1 1 490.343 370 H440 Z" fill="${boundaryTypes.team.color}" />
           <path data-quadrant="bottom-left" data-boundary="user" clip-path="url(#clip-bottom-left)" d="M440 628.928 A132 132 0 1 1 389.657 370 H440 Z" fill="${boundaryTypes.user.color}" />
           <path data-quadrant="bottom-right" data-boundary="team" clip-path="url(#clip-bottom-right)" d="M440 628.928 A132 132 0 1 0 490.343 370 H440 Z" fill="${boundaryTypes.team.color}" />
-          <path class="axis" d="M440 50V690 M150 370H730" />
-          <text class="pole" x="440" y="19">${escapeText(content.poles.top)}</text>
+          <g data-layer="coordination">
+            <path data-boundary="organisation" d="M310 40 H570 A170.833 170.833 0 0 1 310 40 Z" clip-path="url(#coordination-slice)" fill="${boundaryTypes.organisation.color}" opacity="0.65" />
+          </g>
+          <g data-layer="strategy">
+            <path data-boundary="organisation" d="M310 40 H570 A170.833 170.833 0 0 1 310 40 Z" clip-path="url(#strategy-slice)" fill="${boundaryTypes.organisation.color}" />
+          </g>
+          <path class="axis" d="M440 110V690 M150 370H730" />
+          <text class="pole" x="440" y="-52">${escapeText(content.poles.top)}</text>
           <text class="pole" x="440" y="748">${escapeText(content.poles.bottom)}</text>
           <text class="space" x="85" y="358"><tspan x="85">${escapeText(content.spaces.left[0])}</tspan><tspan x="85" dy="24">${escapeText(content.spaces.left[1])}</tspan></text>
           <text class="space" x="795" y="358"><tspan x="795">${escapeText(content.spaces.right[0])}</tspan><tspan x="795" dy="24">${escapeText(content.spaces.right[1])}</tspan></text>
@@ -285,8 +300,8 @@ class SwanHourglass extends HTMLElement {
 
           <g data-layer="align" class="transition">
             <path d="${arrowStyles.align.curved}" marker-end="url(#pink-arrow)" />
-            <rect x="378" y="66" width="124" height="31" rx="6" />
-            <text x="440" y="82">${escapeText(content.transitions.align)}</text>
+            <rect x="378" y="8" width="124" height="31" rx="6" />
+            <text x="440" y="24">${escapeText(content.transitions.align)}</text>
           </g>
           <g data-layer="bet" class="transition">
             <path d="${arrowStyles.bet.straight}" marker-end="url(#pink-arrow)" />
@@ -308,6 +323,12 @@ class SwanHourglass extends HTMLElement {
             <rect x="402" y="291" width="76" height="31" rx="6" />
             <text x="440" y="307">${escapeText(content.transitions.probe)}</text>
           </g>
+          </g>
+          <g data-label-for="coordination">
+            <text class="flight-label" x="440" y="82">${escapeText(content.flightLevels.coordination)}</text>
+          </g>
+          <g data-label-for="strategy">
+            <text class="flight-label" x="440" y="54">${escapeText(content.flightLevels.strategy)}</text>
           </g>
           <g class="legend" aria-label="Activity colors">
             <rect x="160" y="790" width="260" height="40" rx="6" fill="#7162c9" />
@@ -340,6 +361,7 @@ class SwanHourglass extends HTMLElement {
           ${this.controls('Roles', roles)}
           ${this.controls('Transitions', transitions)}
           ${this.controls('Shortcut transitions', shortcuts)}
+          ${this.controls('Horizons', flightLevels)}
           <div role="group" aria-label="Transition decision authority">
             <div class="control-heading"><h2>Decision</h2></div>
             <div class="buttons">${Object.entries(arrowStyles).map(([id, style]) => `<button type="button" data-arrow="${id}" aria-pressed="${style.defaultCurved}" aria-label="Outside decision for ${escapeText(content.transitions[id])}">${escapeText(content.decisionNames[id][style.defaultCurved ? 'outside' : 'inside'])}: ${style.defaultCurved ? 'Outside' : 'Inside'}</button>`).join('')}</div>
@@ -393,7 +415,7 @@ class SwanHourglass extends HTMLElement {
       const owner = event.target.dataset.boundaryColor;
       if (!owner) return;
       boundaryColors[owner] = event.target.value;
-      for (const shape of root.querySelectorAll(`[data-quadrant][data-boundary="${owner}"]`)) {
+      for (const shape of root.querySelectorAll(`[data-boundary="${owner}"]`)) {
         shape.setAttribute('fill', boundaryColors[owner]);
       }
     });
@@ -463,6 +485,10 @@ class SwanHourglass extends HTMLElement {
         if (Object.keys(boundaryColors).length <= 1) return;
         delete boundaryColors[id];
         const fallback = Object.hasOwn(boundaryColors, 'team') ? 'team' : Object.keys(boundaryColors)[0];
+        for (const shape of root.querySelectorAll(`[data-boundary="${id}"]`)) {
+          shape.dataset.boundary = fallback;
+          shape.setAttribute('fill', boundaryColors[fallback]);
+        }
         for (const select of root.querySelectorAll('[data-boundary-owner]')) {
           if (select.value === id) {
             select.value = fallback;
@@ -603,6 +629,7 @@ class SwanHourglass extends HTMLElement {
 
   setVisible(name, visible) {
     this.layer(name).toggleAttribute('hidden', !visible);
+    this.shadowRoot.querySelector(`[data-label-for="${name}"]`)?.toggleAttribute('hidden', !visible);
     this.shadowRoot.querySelector(`[data-item="${name}"]`).setAttribute('aria-pressed', String(visible));
   }
 
