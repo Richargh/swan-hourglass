@@ -25,6 +25,7 @@ const content = {
     using: 'Using',
   },
   flightLevels: {
+    organisation: 'Organisation',
     coordination: 'Coordination',
     strategy: 'Strategy',
   },
@@ -75,7 +76,7 @@ const key = name => itemKeys.get(name);
 const boundaryTypes = {
   team: { name: 'Product Team', color: '#f0edff' },
   user: { name: 'User', color: '#ffe8bf' },
-  organisation: { name: 'Organisation', color: '#dceee8' },
+  organisation: { name: 'Organisation', color: '#dce8b8' },
 };
 const boundaryAssignments = [
   { quadrant: 'bottom-left', activity: 'using', owner: 'user' },
@@ -257,11 +258,14 @@ class SwanHourglass extends HTMLElement {
           <path data-quadrant="top-right" data-boundary="team" clip-path="url(#clip-top-right)" d="M440 111.072 A132 132 0 1 1 490.343 370 H440 Z" fill="${boundaryTypes.team.color}" />
           <path data-quadrant="bottom-left" data-boundary="user" clip-path="url(#clip-bottom-left)" d="M440 628.928 A132 132 0 1 1 389.657 370 H440 Z" fill="${boundaryTypes.user.color}" />
           <path data-quadrant="bottom-right" data-boundary="team" clip-path="url(#clip-bottom-right)" d="M440 628.928 A132 132 0 1 0 490.343 370 H440 Z" fill="${boundaryTypes.team.color}" />
-          <g data-layer="coordination">
-            <path data-boundary="organisation" d="M310 40 H570 A170.833 170.833 0 0 1 310 40 Z" clip-path="url(#coordination-slice)" fill="${boundaryTypes.organisation.color}" opacity="0.65" />
-          </g>
-          <g data-layer="strategy">
-            <path data-boundary="organisation" d="M310 40 H570 A170.833 170.833 0 0 1 310 40 Z" clip-path="url(#strategy-slice)" fill="${boundaryTypes.organisation.color}" />
+          <g data-layer="organisation">
+            <path data-boundary="organisation" d="M310 40 H570 A170.833 170.833 0 0 1 310 40 Z" fill="${boundaryTypes.organisation.color}" />
+            <g data-layer="coordination">
+              <path d="M310 40 H570 A170.833 170.833 0 0 1 310 40 Z" clip-path="url(#coordination-slice)" fill="white" opacity="0.35" />
+            </g>
+            <g data-layer="strategy">
+              <path d="M310 40 H570 A170.833 170.833 0 0 1 310 40 Z" clip-path="url(#strategy-slice)" fill="black" opacity="0.08" />
+            </g>
           </g>
           <path class="axis" d="M440 110V690 M150 370H730" />
           <text class="pole" x="440" y="-52">${escapeText(content.poles.top)}</text>
@@ -269,6 +273,15 @@ class SwanHourglass extends HTMLElement {
           <text class="space" x="85" y="358"><tspan x="85">${escapeText(content.spaces.left[0])}</tspan><tspan x="85" dy="24">${escapeText(content.spaces.left[1])}</tspan></text>
           <text class="space" x="795" y="358"><tspan x="795">${escapeText(content.spaces.right[0])}</tspan><tspan x="795" dy="24">${escapeText(content.spaces.right[1])}</tspan></text>
 
+          <g data-outside-org="listen" hidden>
+            <path data-boundary="organisation" d="M339 330 V410 A41 41 0 0 0 339 330 Z" fill="${boundaryTypes.organisation.color}" />
+          </g>
+          <g data-outside-org="bet" hidden>
+            <path data-boundary="organisation" d="M541 410 V330 A41 41 0 0 0 541 410 Z" fill="${boundaryTypes.organisation.color}" />
+          </g>
+          <g data-outside-org="release" hidden>
+            <path data-boundary="organisation" d="M400 668 H480 A41 41 0 0 0 400 668 Z" fill="${boundaryTypes.organisation.color}" />
+          </g>
           <g class="hourglass" transform="translate(0 -10)">
           <g data-layer="learning" class="activity">
             <path class="ring" d="M394 355 A106.633 106.633 0 0 1 425 144" />
@@ -334,11 +347,13 @@ class SwanHourglass extends HTMLElement {
             <text x="440" y="307">${escapeText(content.transitions.probe)}</text>
           </g>
           </g>
+          <g data-organisation-labels>
           <g data-label-for="coordination">
             <text class="flight-label" x="440" y="82">${escapeText(content.flightLevels.coordination)}</text>
           </g>
           <g data-label-for="strategy">
             <text class="flight-label" x="440" y="54">${escapeText(content.flightLevels.strategy)}</text>
+          </g>
           </g>
           <g class="legend" aria-label="Activity colors">
             <rect x="160" y="790" width="260" height="40" rx="6" fill="#7162c9" />
@@ -389,7 +404,7 @@ class SwanHourglass extends HTMLElement {
             <div role="group" aria-label="Team boundaries" class="gap-control section-body">
             <div class="control-heading"><button type="button" id="add-boundary" aria-label="Add team boundary" title="Add team boundary">+</button></div>
             <div class="boundary-colors">
-              ${Object.entries(boundaryTypes).map(([id, boundary]) => `<div class="boundary-color" data-boundary-row="${id}"><input type="text" data-boundary-name="${id}" value="${escapeText(boundary.name)}" aria-label="Name for ${escapeText(boundary.name)} boundary"><input type="color" id="boundary-color-${id}" data-boundary-color="${id}" value="${boundary.color}" aria-label="Color for ${escapeText(boundary.name)} boundary"><button type="button" data-remove-boundary="${id}" aria-label="Remove ${boundary.name} boundary">−</button></div>`).join('')}
+              ${Object.entries(boundaryTypes).map(([id, boundary]) => `<div class="boundary-color" data-boundary-row="${id}">${id === 'organisation' ? `<label for="boundary-color-${id}">${escapeText(boundary.name)}</label>` : `<input type="text" data-boundary-name="${id}" value="${escapeText(boundary.name)}" aria-label="Name for ${escapeText(boundary.name)} boundary">`}<input type="color" id="boundary-color-${id}" data-boundary-color="${id}" value="${boundary.color}" aria-label="Color for ${escapeText(boundary.name)} boundary"><button type="button" data-remove-boundary="${id}" aria-label="Remove ${boundary.name} boundary">−</button></div>`).join('')}
             </div>
             ${boundaryAssignments.map(({ quadrant, activity, owner }) => `<div class="boundary-row">
               <label for="owner-${quadrant}">${escapeText(content.activities[activity])}</label>
@@ -583,6 +598,7 @@ class SwanHourglass extends HTMLElement {
         visibilityButton.textContent = name;
         visibilityButton.setAttribute('aria-label', `Show ${name}`);
         button.textContent = `${name}: ${curved ? 'Outside' : 'Inside'}`;
+        this.updateOutsideOrganisation(id);
       } else if (button.dataset.item) {
         this.setVisible(button.dataset.item, button.getAttribute('aria-pressed') !== 'true');
       } else {
@@ -651,10 +667,22 @@ class SwanHourglass extends HTMLElement {
     return this.shadowRoot.querySelector(`[data-layer="${name}"]`);
   }
 
+  updateOutsideOrganisation(name) {
+    const organisation = this.shadowRoot.querySelector(`[data-outside-org="${name}"]`);
+    if (!organisation) return;
+    const outside = this.shadowRoot.querySelector(`[data-arrow="${name}"]`).getAttribute('aria-pressed') === 'true';
+    organisation.toggleAttribute('hidden', !outside || this.layer(name).hasAttribute('hidden') || this.layer('organisation').hasAttribute('hidden'));
+  }
+
   setVisible(name, visible) {
     this.layer(name).toggleAttribute('hidden', !visible);
     this.shadowRoot.querySelector(`[data-label-for="${name}"]`)?.toggleAttribute('hidden', !visible);
     this.shadowRoot.querySelector(`[data-item="${name}"]`).setAttribute('aria-pressed', String(visible));
+    if (name === 'organisation') {
+      this.shadowRoot.querySelector('[data-organisation-labels]').toggleAttribute('hidden', !visible);
+      for (const transition of ['listen', 'bet', 'release']) this.updateOutsideOrganisation(transition);
+    }
+    this.updateOutsideOrganisation(name);
   }
 
   updateGroupButtons() {
