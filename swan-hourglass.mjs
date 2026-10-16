@@ -156,7 +156,7 @@ class SwanHourglass extends HTMLElement {
       <style>
         :host { display: block; color: #242044; font-family: system-ui, sans-serif; }
         * { box-sizing: border-box; }
-        .card { display: grid; grid-template-columns: 300px minmax(0, 1fr); align-items: start; overflow: hidden; border: 1px solid #e1dfeb; border-radius: 20px; background: white; box-shadow: 0 12px 40px #24204408; }
+        .card { display: grid; grid-template-columns: 580px minmax(0, 1fr); align-items: start; overflow: hidden; border: 1px solid #e1dfeb; border-radius: 20px; background: white; box-shadow: 0 12px 40px #24204408; }
         svg { display: block; grid-column: 2; grid-row: 1; align-self: start; width: 100%; height: auto; }
         svg text { fill: #242044; text-anchor: middle; dominant-baseline: middle; }
         .axis { stroke: #aba6c7; stroke-width: 1.5; stroke-dasharray: 5 7; }
@@ -186,7 +186,8 @@ class SwanHourglass extends HTMLElement {
         .shortcut path { stroke: #00a968; }
         .shortcut rect { fill: #00a968; }
         [hidden] { display: none !important; }
-        .controls { grid-column: 1; grid-row: 1; align-self: stretch; align-content: start; min-width: 0; border-right: 1px solid #e1dfeb; padding: 20px; display: grid; gap: 22px; }
+        .controls { grid-column: 1; grid-row: 1; align-self: stretch; align-content: start; min-width: 0; border-right: 1px solid #e1dfeb; padding: 16px; display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 20px; }
+        .other-controls { grid-column: 2; grid-row: 1; display: grid; align-content: start; gap: 22px; min-width: 0; }
         .control-heading { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-bottom: 10px; }
         h2 { margin: 0; font-size: .85rem; letter-spacing: .08em; text-transform: uppercase; }
         .buttons { display: flex; flex-wrap: wrap; gap: 8px; }
@@ -198,7 +199,7 @@ class SwanHourglass extends HTMLElement {
         button:focus-visible { outline: 3px solid #7263cb; outline-offset: 3px; }
         .group-toggle { padding: 4px 8px; border-color: transparent; color: #65539f; }
         .gap-control { display: grid; gap: 10px; }
-        .boundary-controls { display: grid; gap: 16px; }
+        .boundary-controls { grid-column: 1; grid-row: 1; display: grid; align-content: start; gap: 16px; min-width: 0; }
         .boundary-colors { display: grid; gap: 8px; }
         .boundary-row { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1.2fr); align-items: center; gap: 10px; font-size: .85rem; }
         .boundary-row select { min-width: 0; width: 100%; }
@@ -215,10 +216,14 @@ class SwanHourglass extends HTMLElement {
         select { font: inherit; padding: 8px 12px; color: #242044; border: 1px solid #dcd8eb; border-radius: 8px; background: white; }
         input:focus-visible, select:focus-visible { outline: 3px solid #7263cb; outline-offset: 3px; }
         .hint { margin: 0; font-size: .8rem; color: #777187; }
-        @media (max-width: 760px) {
+        @media (max-width: 1100px) {
           .card { grid-template-columns: minmax(0, 1fr); }
           svg { grid-column: 1; }
           .controls { grid-row: 2; border-right: 0; border-top: 1px solid #e1dfeb; padding: 16px; }
+        }
+        @media (max-width: 600px) {
+          .controls { grid-template-columns: minmax(0, 1fr); }
+          .other-controls { grid-column: 1; grid-row: 2; }
         }
       </style>
       <section class="card" aria-label="Interactive Swan Hourglass">
@@ -345,6 +350,7 @@ class SwanHourglass extends HTMLElement {
           </g>
         </svg>
         <div class="controls">
+          <div class="other-controls">
           ${this.controls('Activities', activities)}
           <div class="gap-control" role="group" aria-label="Activity flow">
             <h2>Activity flow</h2>
@@ -361,13 +367,15 @@ class SwanHourglass extends HTMLElement {
           ${this.controls('Roles', roles)}
           ${this.controls('Transitions', transitions)}
           ${this.controls('Shortcut transitions', shortcuts)}
-          ${this.controls('Horizons', flightLevels)}
           <div role="group" aria-label="Transition decision authority">
             <div class="control-heading"><h2>Decision</h2></div>
             <div class="buttons">${Object.entries(arrowStyles).map(([id, style]) => `<button type="button" data-arrow="${id}" aria-pressed="${style.defaultCurved}" aria-label="Outside decision for ${escapeText(content.transitions[id])}">${escapeText(content.decisionNames[id][style.defaultCurved ? 'outside' : 'inside'])}: ${style.defaultCurved ? 'Outside' : 'Inside'}</button>`).join('')}</div>
             <p class="hint">Inside: straight arrow. Outside: outward arrow.</p>
           </div>
-          <div class="boundary-controls" role="group" aria-label="Team boundaries">
+          <p class="hint">Toggle any element to explore the model. The quadrants stay visible.</p>
+          </div>
+          <div class="boundary-controls">
+            <div role="group" aria-label="Team boundaries" class="gap-control">
             <div class="control-heading"><h2>Team boundaries</h2><button type="button" id="add-boundary" aria-label="Add team boundary" title="Add team boundary">+</button></div>
             <div class="boundary-colors">
               ${Object.entries(boundaryTypes).map(([id, boundary]) => `<div class="boundary-color" data-boundary-row="${id}"><input type="text" data-boundary-name="${id}" value="${escapeText(boundary.name)}" aria-label="Name for ${escapeText(boundary.name)} boundary"><input type="color" id="boundary-color-${id}" data-boundary-color="${id}" value="${boundary.color}" aria-label="Color for ${escapeText(boundary.name)} boundary"><button type="button" data-remove-boundary="${id}" aria-label="Remove ${boundary.name} boundary">−</button></div>`).join('')}
@@ -391,7 +399,8 @@ class SwanHourglass extends HTMLElement {
             <p class="hint" id="gap-hint">Cuts a gap only between different boundaries, in SVG units. Shapes assigned to the same boundary touch.</p>
           </div>
           </div>
-          <p class="hint">Toggle any element to explore the model. The quadrants stay visible.</p>
+            ${this.controls('Horizons', flightLevels)}
+          </div>
         </div>
       </section>
     `;
