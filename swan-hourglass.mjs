@@ -8,6 +8,7 @@ const content = {
   legend: {
     rightThing: 'build the right thing',
     thingRight: 'build the thing right',
+    flow: 'Diverge → Converge',
   },
   poles: {
     top: 'Idea Space',
@@ -102,6 +103,43 @@ const arrowStyles = {
   },
 };
 
+// A short funnel widens toward the activity endpoint.
+function activityEndFunnel(path, width) {
+  const length = path.getTotalLength();
+  const outer = [];
+  const inner = [];
+  for (let i = 0; i <= 24; i++) {
+    const t = i / 24;
+    const distance = (0.9 + 0.1 * t) * length;
+    const point = path.getPointAtLength(distance);
+    const before = path.getPointAtLength(distance - 0.1);
+    const after = path.getPointAtLength(Math.min(length, distance + 0.1));
+    const dx = after.x - before.x;
+    const dy = after.y - before.y;
+    const tangentLength = Math.hypot(dx, dy);
+    const halfWidth = 6.5 + (width / 2 - 6.5) * t;
+    // Gradually straighten the cross-section so the funnel ends vertically.
+    const normalX = (1 - t) * -dy / tangentLength;
+    const normalY = (1 - t) * dx / tangentLength + t * Math.sign(dx);
+    const normalLength = Math.hypot(normalX, normalY);
+    const nx = normalX / normalLength * halfWidth;
+    const ny = normalY / normalLength * halfWidth;
+    outer.push(`${point.x + nx},${point.y + ny}`);
+    inner.push(`${point.x - nx},${point.y - ny}`);
+  }
+  return `M${outer.join(' L')} L${inner.reverse().join(' L')} Z`;
+}
+
+function activityHalf(path, start, end) {
+  const length = path.getTotalLength();
+  const points = [];
+  for (let i = 0; i <= 40; i++) {
+    const point = path.getPointAtLength((start + (end - start) * i / 40) * length);
+    points.push(`${point.x},${point.y}`);
+  }
+  return `M${points.join(' L')}`;
+}
+
 class SwanHourglass extends HTMLElement {
   constructor() {
     super();
@@ -119,6 +157,15 @@ class SwanHourglass extends HTMLElement {
         .space { font-size: 19px; font-weight: 700; }
         .pole { font-size: 18px; font-weight: 600; }
         .ring { fill: none; stroke: #7162c9; stroke-width: 13; }
+        .activity-end-funnel { display: none; fill: #7162c9; pointer-events: none; }
+        [data-layer="changing"] .activity-end-funnel { fill: #0030FF; }
+        svg[data-end-funnels] .activity-end-funnel { display: inline; }
+        .activity-hatched { display: none; }
+        .activity-hatched path { fill: none; stroke: #7162c9; stroke-width: 13; }
+        [data-layer="changing"] .activity-hatched path { stroke: #0030FF; }
+        svg[data-hatching] .activity-hatched { display: inline; }
+        svg[data-hatching] .ring { visibility: hidden; }
+        .flow-legend text { font-size: 17px; fill: #68627e; }
         .role text { font-size: 15px; fill: #68627e; }
         .role use { color: #68627e; }
         .activity rect { fill: #7162c9; }
@@ -168,11 +215,14 @@ class SwanHourglass extends HTMLElement {
         }
       </style>
       <section class="card" aria-label="Interactive Swan Hourglass">
-        <svg viewBox="0 -20 880 880" role="img" aria-labelledby="diagram-title diagram-description">
+        <svg data-end-funnels viewBox="0 -20 880 930" role="img" aria-labelledby="diagram-title diagram-description">
           <title id="diagram-title">${escapeText(content.title)}</title>
           <desc id="diagram-description">${escapeText(content.description)}</desc>
           <metadata><rdf:RDF xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#" xmlns:cc="http://creativecommons.org/ns#"><cc:Work rdf:about=""><cc:license rdf:resource="${escapeText(content.licenseUrl)}" /></cc:Work></rdf:RDF></metadata>
           <defs>
+            ${[['purple', '#7162c9'], ['blue', '#0030FF']].map(([id, color]) => `<pattern id="hatch-${id}" patternUnits="userSpaceOnUse" width="6" height="6">
+              <path d="M-1 1 L1 -1 M0 6 L6 0 M5 7 L7 5" fill="none" stroke="${color}" stroke-width="2.5" />
+            </pattern>`).join('')}
             <symbol id="person-icon" viewBox="0 0 20 20">
               <circle cx="10" cy="5" r="3" fill="black" />
               <path d="M3 18 V16 A7 7 0 0 1 17 16 V18 Z" fill="black" />
@@ -265,9 +315,28 @@ class SwanHourglass extends HTMLElement {
             <rect x="460" y="790" width="260" height="40" rx="6" fill="#0030FF" />
             <text x="590" y="810">${escapeText(content.legend.thingRight)}</text>
           </g>
+          <g class="flow-legend" hidden>
+            <g fill="none" stroke-width="13">
+              <path d="M235 875 H275" stroke="url(#hatch-purple)" />
+              <path d="M275 875 H315" stroke="#7162c9" />
+            </g>
+            <text x="470" y="875">${escapeText(content.legend.flow)}</text>
+          </g>
         </svg>
         <div class="controls">
           ${this.controls('Activities', activities)}
+          <div class="gap-control" role="group" aria-label="Activity flow">
+            <h2>Activity flow</h2>
+            <div class="buttons">
+              <button type="button" id="hatching-toggle" aria-pressed="false">Show diverge/converge</button>
+              <button type="button" id="funnels-toggle" aria-pressed="true">Queues</button>
+            </div>
+            ${Object.entries(content.activities).map(([id, name]) => `<div class="gap-control">
+              <div class="gap-label"><label for="queue-${id}">${escapeText(name)} queue</label><output for="queue-${id}" id="queue-value-${id}">1</output></div>
+              <input id="queue-${id}" data-queue="${id}" type="range" min="1" max="10" step="1" value="1" aria-describedby="queue-hint">
+            </div>`).join('')}
+            <p class="hint" id="queue-hint">Queue capacity: 1–10 items. Larger queues widen the queue shape. Diverge/converge marks the first half with hatching.</p>
+          </div>
           ${this.controls('Roles', roles)}
           ${this.controls('Transitions', transitions)}
           ${this.controls('Shortcut transitions', shortcuts)}
@@ -306,6 +375,11 @@ class SwanHourglass extends HTMLElement {
     `;
     this.updateBoundaryGap();
     root.addEventListener('input', event => {
+      if (event.target.dataset.queue) {
+        root.querySelector(`#queue-value-${event.target.dataset.queue}`).value = event.target.value;
+        this.ensureEndFunnels();
+        return;
+      }
       const nameId = event.target.dataset.boundaryName;
       if (nameId) {
         const name = event.target.value.trim() || 'Unnamed boundary';
@@ -353,6 +427,37 @@ class SwanHourglass extends HTMLElement {
     root.addEventListener('click', event => {
       const button = event.target.closest('button');
       if (!button) return;
+      if (button.id === 'hatching-toggle') {
+        const enabled = button.getAttribute('aria-pressed') !== 'true';
+        if (enabled) {
+          for (const ring of root.querySelectorAll('.activity .ring')) {
+            if (ring.parentElement.querySelector('.activity-hatched')) continue;
+            const halves = document.createElementNS('http://www.w3.org/2000/svg', 'g');
+            halves.setAttribute('class', 'activity-hatched');
+            for (const [start, end] of [[0, 0.5], [0.5, 1]]) {
+              const half = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+              half.setAttribute('d', activityHalf(ring, start, end));
+              if (start === 0) {
+                const color = ring.parentElement.dataset.layer === 'changing' ? 'blue' : 'purple';
+                half.style.stroke = `url(#hatch-${color})`;
+              }
+              halves.append(half);
+            }
+            ring.after(halves);
+          }
+        }
+        root.querySelector('svg').toggleAttribute('data-hatching', enabled);
+        root.querySelector('.flow-legend').toggleAttribute('hidden', !enabled);
+        button.setAttribute('aria-pressed', String(enabled));
+        return;
+      }
+      if (button.id === 'funnels-toggle') {
+        const enabled = button.getAttribute('aria-pressed') !== 'true';
+        if (enabled) this.ensureEndFunnels();
+        root.querySelector('svg').toggleAttribute('data-end-funnels', enabled);
+        button.setAttribute('aria-pressed', String(enabled));
+        return;
+      }
       if (button.dataset.removeBoundary) {
         const id = button.dataset.removeBoundary;
         if (Object.keys(boundaryColors).length <= 1) return;
@@ -440,6 +545,25 @@ class SwanHourglass extends HTMLElement {
       }
       this.updateGroupButtons();
     });
+  }
+
+  connectedCallback() {
+    this.ensureEndFunnels();
+  }
+
+  ensureEndFunnels() {
+    for (const ring of this.shadowRoot.querySelectorAll('.activity .ring')) {
+      const id = ring.parentElement.dataset.layer;
+      const capacity = Number(this.shadowRoot.querySelector(`#queue-${id}`).value);
+      const width = 13 + (capacity - 1) * 6;
+      let funnel = ring.parentElement.querySelector('.activity-end-funnel');
+      if (!funnel) {
+        funnel = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+        funnel.setAttribute('class', 'activity-end-funnel');
+        ring.after(funnel);
+      }
+      funnel.setAttribute('d', activityEndFunnel(ring, width));
+    }
   }
 
   updateBoundaryGap() {
