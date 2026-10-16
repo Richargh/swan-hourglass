@@ -167,6 +167,66 @@ function activityHalf(path, start, end) {
   return `M${points.join(' L')}`;
 }
 
+function attributionRdf() {
+  return `<rdf:RDF xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#" xmlns:cc="http://creativecommons.org/ns#" xmlns:dc="http://purl.org/dc/elements/1.1/">
+    <cc:Work rdf:about="">
+      <dc:title>${escapeText(content.title)}</dc:title>
+      <dc:creator><cc:Agent rdf:about="${escapeText(content.authorUrl)}"><dc:title>${escapeText(content.author)}</dc:title></cc:Agent></dc:creator>
+      <dc:source rdf:resource="${escapeText(content.sourceUrl)}" />
+      <cc:attributionName>${escapeText(content.author)}</cc:attributionName>
+      <cc:attributionURL rdf:resource="${escapeText(content.sourceUrl)}" />
+      <cc:license rdf:resource="${escapeText(content.licenseUrl)}" />
+    </cc:Work>
+  </rdf:RDF>`;
+}
+
+function pngTextChunk(keyword, text) {
+  const encoder = new TextEncoder();
+  const key = encoder.encode(keyword);
+  const value = encoder.encode(text);
+  // PNG iTXt: keyword, null, compression flag/method, empty language/name, UTF-8 text.
+  const data = new Uint8Array(key.length + 5 + value.length);
+  data.set(key);
+  data.set(value, key.length + 5);
+  const chunk = new Uint8Array(data.length + 12);
+  const view = new DataView(chunk.buffer);
+  view.setUint32(0, data.length);
+  chunk.set(encoder.encode('iTXt'), 4);
+  chunk.set(data, 8);
+  let crc = 0xffffffff;
+  for (const byte of chunk.subarray(4, chunk.length - 4)) {
+    crc ^= byte;
+    for (let bit = 0; bit < 8; bit++) crc = (crc >>> 1) ^ ((crc & 1) ? 0xedb88320 : 0);
+  }
+  view.setUint32(chunk.length - 4, (crc ^ 0xffffffff) >>> 0);
+  return chunk;
+}
+
+async function addPngAttribution(blob) {
+  const bytes = new Uint8Array(await blob.arrayBuffer());
+  const view = new DataView(bytes.buffer);
+  let offset = 8;
+  while (offset + 12 <= bytes.length) {
+    const length = view.getUint32(offset);
+    if (offset + length + 12 > bytes.length) break;
+    if (String.fromCharCode(...bytes.subarray(offset + 4, offset + 8)) === 'IEND') {
+      const fields = {
+        Title: content.title,
+        Author: content.author,
+        Attribution: `${content.attributionTitle} by ${content.author} · ${content.licenseLabel}`,
+        Copyright: `© ${content.author}. Licensed under ${content.licenseLabel}.`,
+        Source: content.sourceUrl,
+        License: content.licenseUrl,
+        Description: content.description,
+      };
+      const chunks = Object.entries(fields).map(([key, value]) => pngTextChunk(key, value));
+      return new Blob([bytes.subarray(0, offset), ...chunks, bytes.subarray(offset)], { type: 'image/png' });
+    }
+    offset += length + 12;
+  }
+  throw new Error('Could not embed attribution in PNG.');
+}
+
 class SwanHourglass extends HTMLElement {
   constructor() {
     super();
@@ -182,8 +242,13 @@ class SwanHourglass extends HTMLElement {
       <style>
         :host { display: block; color: #242044; font-family: system-ui, sans-serif; --sand-color: #d9b56e; }
         * { box-sizing: border-box; }
+        .export-toolbar { display: grid; grid-template-columns: 580px minmax(0, 1fr); margin-bottom: 12px; }
+        .export-actions { grid-column: 2; display: flex; flex-wrap: wrap; align-items: center; justify-content: center; gap: 8px; }
+        .export-destination { display: flex; align-items: center; gap: 8px; font-size: .8rem; color: #68627e; }
+        #export-status { grid-column: 2; text-align: center; font-size: .8rem; color: #68627e; }
+        #export-status:empty { display: none; }
         .card { display: grid; grid-template-columns: 580px minmax(0, 1fr); align-items: start; overflow: hidden; border: 1px solid #e1dfeb; border-radius: 20px; background: white; box-shadow: 0 12px 40px #24204408; }
-        svg { display: block; grid-column: 2; grid-row: 1; align-self: start; width: 100%; height: auto; max-height: calc(100dvh - 280px); }
+        svg { display: block; grid-column: 2; grid-row: 1; align-self: start; width: 100%; height: auto; max-height: calc(100dvh - 330px); }
         svg text { fill: #242044; text-anchor: middle; dominant-baseline: middle; }
         .axis { stroke: #aba6c7; stroke-width: 1.5; stroke-dasharray: 5 7; }
         .space { font-size: 19px; font-weight: 700; }
@@ -238,7 +303,7 @@ class SwanHourglass extends HTMLElement {
         .shortcut path { stroke: #00a968; }
         .shortcut rect { fill: #00a968; }
         [hidden] { display: none !important; }
-        .controls { max-height: calc(100dvh - 280px); overflow-y: auto; grid-column: 1; grid-row: 1; align-self: stretch; align-content: start; min-width: 0; border-right: 1px solid #e1dfeb; padding: 16px; display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 20px; }
+        .controls { max-height: calc(100dvh - 330px); overflow-y: auto; grid-column: 1; grid-row: 1; align-self: stretch; align-content: start; min-width: 0; border-right: 1px solid #e1dfeb; padding: 16px; display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 20px; }
         .other-controls { grid-column: 2; grid-row: 1; display: grid; align-content: start; gap: 22px; min-width: 0; }
         .control-heading { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-bottom: 10px; }
         h2 { margin: 0; font-size: .85rem; letter-spacing: .08em; text-transform: uppercase; }
@@ -274,7 +339,8 @@ class SwanHourglass extends HTMLElement {
         input:focus-visible, select:focus-visible { outline: 3px solid #7263cb; outline-offset: 3px; }
         .hint { margin: 0; font-size: .8rem; color: #777187; }
         @media (max-width: 1100px) {
-          .card { grid-template-columns: minmax(0, 1fr); }
+          .card, .export-toolbar { grid-template-columns: minmax(0, 1fr); }
+          .export-actions, #export-status { grid-column: 1; }
           svg { grid-column: 1; }
           .controls { grid-row: 2; max-height: none; overflow-y: visible; border-right: 0; border-top: 1px solid #e1dfeb; padding: 16px; }
         }
@@ -285,22 +351,21 @@ class SwanHourglass extends HTMLElement {
           .work-player .work-option { justify-self: center; }
         }
       </style>
+      <div class="export-toolbar" role="group" aria-label="Diagram screenshots">
+        <div class="export-actions">
+          <button type="button" data-export="png">Screenshot as PNG</button>
+          <button type="button" data-export="svg">Screenshot as SVG</button>
+          <label class="export-destination" for="export-destination">Save to
+            <select id="export-destination"><option value="file" selected>File</option><option value="clipboard">Clipboard</option></select>
+          </label>
+        </div>
+        <output id="export-status" aria-live="polite"></output>
+      </div>
       <section class="card" aria-label="Interactive Swan Hourglass">
         <svg data-end-funnels viewBox="0 -90 880 1000" role="img" aria-labelledby="diagram-title diagram-description">
           <title id="diagram-title">${escapeText(content.title)}</title>
           <desc id="diagram-description">${escapeText(content.description)}</desc>
-          <metadata>
-            <rdf:RDF xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#" xmlns:cc="http://creativecommons.org/ns#" xmlns:dc="http://purl.org/dc/elements/1.1/">
-              <cc:Work rdf:about="">
-                <dc:title>${escapeText(content.title)}</dc:title>
-                <dc:creator><cc:Agent rdf:about="${escapeText(content.authorUrl)}"><dc:title>${escapeText(content.author)}</dc:title></cc:Agent></dc:creator>
-                <dc:source rdf:resource="${escapeText(content.sourceUrl)}" />
-                <cc:attributionName>${escapeText(content.author)}</cc:attributionName>
-                <cc:attributionURL rdf:resource="${escapeText(content.sourceUrl)}" />
-                <cc:license rdf:resource="${escapeText(content.licenseUrl)}" />
-              </cc:Work>
-            </rdf:RDF>
-          </metadata>
+          <metadata>${attributionRdf()}</metadata>
           <defs>
             <path id="sand-shape" d="M313.811 540 H566.189 A100.133 100.133 0 0 1 455.945 609.569 H424.055 A100.133 100.133 0 0 1 313.811 540 Z" />
             <clipPath id="sand-obvious"><rect x="300" y="540" width="280" height="14" /></clipPath>
@@ -601,6 +666,10 @@ class SwanHourglass extends HTMLElement {
     root.addEventListener('click', event => {
       const button = event.target.closest('button');
       if (!button) return;
+      if (button.dataset.export) {
+        void this.exportScreenshot(button.dataset.export);
+        return;
+      }
       if (button.id === 'work-play') {
         if (this.workRunning) this.pauseWorkFlow();
         else this.playWorkFlow();
@@ -739,6 +808,98 @@ class SwanHourglass extends HTMLElement {
       }
       this.updateGroupButtons();
     });
+  }
+
+  screenshotSvg() {
+    const original = this.shadowRoot.querySelector('svg');
+    const clone = original.cloneNode(true);
+    const properties = [
+      'display', 'visibility', 'fill', 'fill-opacity', 'stroke', 'stroke-width',
+      'stroke-opacity', 'stroke-linecap', 'stroke-linejoin', 'stroke-dasharray',
+      'opacity', 'font-family', 'font-size', 'font-weight', 'font-style',
+      'letter-spacing', 'text-anchor', 'dominant-baseline', 'paint-order',
+      'text-decoration', 'clip-path', 'filter', 'marker-start', 'marker-end',
+    ];
+    const sources = [original, ...original.querySelectorAll('*')];
+    const copies = [clone, ...clone.querySelectorAll('*')];
+    sources.forEach((element, index) => {
+      // Definition geometry must inherit paint from <use>, not freeze its default fill.
+      if (element.closest('defs') || element.closest('metadata')) return;
+      const computed = getComputedStyle(element);
+      for (const property of properties) {
+        const value = computed.getPropertyValue(property)
+          .replace(/url\(["']?[^"')]*#([^"')]+)["']?\)/g, 'url(#$1)');
+        copies[index].style.setProperty(property, value);
+      }
+    });
+    const viewBox = original.viewBox.baseVal;
+    clone.setAttribute('width', String(viewBox.width));
+    clone.setAttribute('height', String(viewBox.height));
+    // Parse RDF as XML so namespace prefixes and case survive HTML serialization.
+    const rdf = new DOMParser().parseFromString(attributionRdf(), 'application/xml');
+    clone.querySelector('metadata').replaceChildren(document.importNode(rdf.documentElement, true));
+    return new Blob([new XMLSerializer().serializeToString(clone)], { type: 'image/svg+xml' });
+  }
+
+  async screenshotPng(svgBlob) {
+    const url = URL.createObjectURL(svgBlob);
+    try {
+      const image = new Image();
+      image.src = url;
+      await image.decode();
+      const canvas = document.createElement('canvas');
+      canvas.width = image.naturalWidth * 2;
+      canvas.height = image.naturalHeight * 2;
+      const context = canvas.getContext('2d');
+      if (!context) throw new Error('PNG rendering is unavailable in this browser.');
+      context.drawImage(image, 0, 0, canvas.width, canvas.height);
+      const png = await new Promise((resolve, reject) => {
+        canvas.toBlob(blob => blob ? resolve(blob) : reject(new Error('Could not create PNG.')), 'image/png');
+      });
+      return await addPngAttribution(png);
+    } finally {
+      URL.revokeObjectURL(url);
+    }
+  }
+
+  async exportScreenshot(format) {
+    const root = this.shadowRoot;
+    const status = root.querySelector('#export-status');
+    const buttons = root.querySelectorAll('[data-export]');
+    const destination = root.querySelector('#export-destination').value;
+    status.textContent = 'Preparing screenshot…';
+    for (const button of buttons) button.disabled = true;
+    try {
+      const type = format === 'png' ? 'image/png' : 'image/svg+xml';
+      if (destination === 'clipboard') {
+        if (!navigator.clipboard?.write || typeof ClipboardItem === 'undefined') {
+          throw new Error('Clipboard images are unavailable here. Select File instead.');
+        }
+        if (ClipboardItem.supports && !ClipboardItem.supports(type)) {
+          throw new Error(`${format.toUpperCase()} clipboard copying is unsupported by this browser. Select File instead.`);
+        }
+      }
+      const svg = this.screenshotSvg();
+      const blob = format === 'png' ? this.screenshotPng(svg) : Promise.resolve(svg);
+      if (destination === 'clipboard') {
+        await navigator.clipboard.write([new ClipboardItem({ [type]: blob })]);
+        status.textContent = `${format.toUpperCase()} copied to clipboard.`;
+      } else {
+        const url = URL.createObjectURL(await blob);
+        const link = document.createElement('a');
+        link.href = url;
+        link.download = `swan-hourglass.${format}`;
+        document.body.append(link);
+        link.click();
+        link.remove();
+        setTimeout(() => URL.revokeObjectURL(url), 1000);
+        status.textContent = `${format.toUpperCase()} downloaded.`;
+      }
+    } catch (error) {
+      status.textContent = `Screenshot failed: ${error.message}`;
+    } finally {
+      for (const button of buttons) button.disabled = false;
+    }
   }
 
   connectedCallback() {
