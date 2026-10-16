@@ -267,7 +267,7 @@ class SwanHourglass extends HTMLElement {
               <path d="M310 40 H570 A170.833 170.833 0 0 1 310 40 Z" clip-path="url(#strategy-slice)" fill="black" opacity="0.08" />
             </g>
           </g>
-          <path class="axis" d="M440 110V690 M150 370H730" />
+          <path class="axis" d="M440 -32V728 M150 370H730" />
           <text class="pole" x="440" y="-52">${escapeText(content.poles.top)}</text>
           <text class="pole" x="440" y="748">${escapeText(content.poles.bottom)}</text>
           <text class="space" x="85" y="358"><tspan x="85">${escapeText(content.spaces.left[0])}</tspan><tspan x="85" dy="24">${escapeText(content.spaces.left[1])}</tspan></text>
