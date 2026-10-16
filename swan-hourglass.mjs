@@ -4,7 +4,20 @@ const content = {
   license: 'CC-BY-SA-4.0',
   licenseUrl: 'https://creativecommons.org/licenses/by-sa/4.0/',
   title: '(Black) Swan Hourglass',
-  description: 'Problem space on the left, solution space on the right; idea space above, decision space below. Learning and distilling form the upper ring. Using and changing form the lower ring. Align, bet, release, and listen connect the activities. A green shortcut probes a solution from Distilling to Learning. Roles: Domain Expert for Learning, Analyst for Distilling, Engineer for Changing, and User for Using. Align reaches into the organisational Coordination level above the hourglass, with Strategy above Coordination.',
+  description: 'Problem space on the left, solution space on the right; idea space above, decision space below. Learning and distilling form the upper ring. Using and changing form the lower ring. Align, bet, release, and listen connect the activities. A green shortcut probes a solution from Distilling to Learning. Roles: Domain Expert for Learning, Analyst for Distilling, Engineer for Changing, and User for Using. Align reaches into the organisational Coordination level above the hourglass, with Strategy above Coordination. Two rocks, too large to pass through the neck, are refined into a sand trickle. Below, the sand layers are Obvious (thin), Easy (medium), and Possible (thickest), from top to bottom.',
+  product: {
+    rocks: 'Ideas',
+    trickle: 'Refinement',
+    sand: 'Features',
+    sandObvious: 'Obvious',
+    sandEasy: 'Easy',
+    sandPossible: 'Possible',
+  },
+  sandLayers: {
+    obvious: 'Obvious',
+    easy: 'Easy',
+    possible: 'Possible',
+  },
   legend: {
     rightThing: 'build the right thing',
     thingRight: 'build the thing right',
@@ -55,12 +68,14 @@ const transitions = ['align', 'bet', 'release', 'listen'].map(id => content.tran
 const shortcuts = ['probe'].map(id => content.transitions[id]);
 const roles = Object.values(content.roles);
 const flightLevels = Object.values(content.flightLevels);
+const product = Object.values(content.product);
 const visibilityGroups = {
   activities,
   roles,
   transitions,
   'shortcut-transitions': shortcuts,
   horizons: flightLevels,
+  product,
 };
 const escapeText = text => text
     .replaceAll('&', '&amp;')
@@ -68,14 +83,14 @@ const escapeText = text => text
     .replaceAll('>', '&gt;')
     .replaceAll('"', '&quot;');
 const itemKeys = new Map(
-  Object.entries({ ...content.activities, ...content.transitions, ...content.roles, ...content.flightLevels })
+  Object.entries({ ...content.activities, ...content.transitions, ...content.roles, ...content.flightLevels, ...content.product })
       .map(([id, label]) => [label, id]),
 );
 const key = name => itemKeys.get(name);
 
 const boundaryTypes = {
   team: { name: 'Product Team', color: '#f0edff' },
-  user: { name: 'User', color: '#ffe8bf' },
+  user: { name: 'User', color: '#d9edf7' },
   organisation: { name: 'Organisation', color: '#dce8b8' },
 };
 const boundaryAssignments = [
@@ -155,7 +170,7 @@ class SwanHourglass extends HTMLElement {
     let nextBoundaryNumber = Object.keys(boundaryColors).length + 1;
     root.innerHTML = `
       <style>
-        :host { display: block; color: #242044; font-family: system-ui, sans-serif; }
+        :host { display: block; color: #242044; font-family: system-ui, sans-serif; --sand-color: #d9b56e; }
         * { box-sizing: border-box; }
         .card { display: grid; grid-template-columns: 580px minmax(0, 1fr); align-items: start; overflow: hidden; border: 1px solid #e1dfeb; border-radius: 20px; background: white; box-shadow: 0 12px 40px #24204408; }
         svg { display: block; grid-column: 2; grid-row: 1; align-self: start; width: 100%; height: auto; max-height: calc(100dvh - 160px); }
@@ -174,6 +189,12 @@ class SwanHourglass extends HTMLElement {
         svg[data-hatching] .activity-hatched { display: inline; }
         svg[data-hatching] .ring { visibility: hidden; }
         .flow-legend text { font-size: 17px; fill: #68627e; }
+        .sand-label { font-size: 12px; font-weight: 600; fill: #5b431e; }
+        .rock { fill: var(--sand-color); stroke: color-mix(in srgb, var(--sand-color), black 20%); stroke-width: 1.5; stroke-linejoin: round; }
+        .sand-possible { fill: var(--sand-color); }
+        .sand-easy { fill: color-mix(in srgb, var(--sand-color), white 25%); }
+        .sand-obvious { fill: color-mix(in srgb, var(--sand-color), white 50%); }
+        .sand-trickle { fill: none; stroke: var(--sand-color); stroke-width: 3; stroke-linecap: round; stroke-dasharray: 1 7; }
         .role text { font-size: 15px; fill: #68627e; }
         .role use { color: #68627e; }
         .activity rect { fill: #7162c9; }
@@ -238,6 +259,10 @@ class SwanHourglass extends HTMLElement {
           <desc id="diagram-description">${escapeText(content.description)}</desc>
           <metadata><rdf:RDF xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#" xmlns:cc="http://creativecommons.org/ns#"><cc:Work rdf:about=""><cc:license rdf:resource="${escapeText(content.licenseUrl)}" /></cc:Work></rdf:RDF></metadata>
           <defs>
+            <path id="sand-shape" d="M313.811 540 H566.189 A100.133 100.133 0 0 1 455.945 609.569 H424.055 A100.133 100.133 0 0 1 313.811 540 Z" />
+            <clipPath id="sand-obvious"><rect x="300" y="540" width="280" height="14" /></clipPath>
+            <clipPath id="sand-easy"><rect x="300" y="554" width="280" height="21" /></clipPath>
+            <clipPath id="sand-possible"><rect x="300" y="575" width="280" height="36" /></clipPath>
             <clipPath id="strategy-slice"><rect x="300" y="40" width="280" height="30" /></clipPath>
             <clipPath id="coordination-slice"><rect x="300" y="70" width="280" height="31" /></clipPath>
             ${[['purple', '#7162c9'], ['blue', '#0030FF']].map(([id, color]) => `<pattern id="hatch-${id}" patternUnits="userSpaceOnUse" width="6" height="6">
@@ -267,7 +292,7 @@ class SwanHourglass extends HTMLElement {
               <path d="M310 40 H570 A170.833 170.833 0 0 1 310 40 Z" clip-path="url(#strategy-slice)" fill="black" opacity="0.08" />
             </g>
           </g>
-          <path class="axis" d="M440 -32V728 M150 370H730" />
+          <path class="axis" d="M440 -32V40 M440 650V728 M150 370H280 M600 370H730" />
           <text class="pole" x="440" y="-52">${escapeText(content.poles.top)}</text>
           <text class="pole" x="440" y="748">${escapeText(content.poles.bottom)}</text>
           <text class="space" x="85" y="358"><tspan x="85">${escapeText(content.spaces.left[0])}</tspan><tspan x="85" dy="24">${escapeText(content.spaces.left[1])}</tspan></text>
@@ -283,6 +308,28 @@ class SwanHourglass extends HTMLElement {
             <path data-boundary="organisation" d="M400 668 H480 A41 41 0 0 0 400 668 Z" fill="${boundaryTypes.organisation.color}" />
           </g>
           <g class="hourglass" transform="translate(0 -10)">
+          <g data-layer="rocks">
+            <path class="rock" d="M350 180 L380 160 L425 171 L448 200 L420 225 L370 229 L340 205 Z" />
+            <path class="rock" d="M440 223 L470 206 L510 218 L540 242 L515 264 L465 267 L435 244 Z" />
+          </g>
+          <g data-layer="trickle">
+            <path class="sand-trickle" d="M437 286 Q443 345 439 405 T440 540" />
+          </g>
+          <g data-layer="sand">
+            <use class="sand-possible" href="#sand-shape" />
+            <g data-layer="sandPossible">
+              <use href="#sand-shape" clip-path="url(#sand-possible)" fill="black" opacity="0.08" />
+              <text class="sand-label" x="440" y="585">${escapeText(content.sandLayers.possible)}</text>
+            </g>
+            <g data-layer="sandEasy">
+              <use class="sand-easy" href="#sand-shape" clip-path="url(#sand-easy)" />
+              <text class="sand-label" x="440" y="564.5">${escapeText(content.sandLayers.easy)}</text>
+            </g>
+            <g data-layer="sandObvious">
+              <use class="sand-obvious" href="#sand-shape" clip-path="url(#sand-obvious)" />
+              <text class="sand-label" x="440" y="547">${escapeText(content.sandLayers.obvious)}</text>
+            </g>
+          </g>
           <g data-layer="learning" class="activity">
             <path class="ring" d="M394 355 A106.633 106.633 0 0 1 425 144" />
             <rect x="179" y="234" width="112" height="31" rx="6" />
@@ -427,12 +474,17 @@ class SwanHourglass extends HTMLElement {
           </div>
             </details>
             ${this.controls('Horizons', flightLevels)}
+            ${this.controls('Product', product, '<label class="boundary-color section-body" for="sand-color">Product color<input type="color" id="sand-color" value="#d9b56e"></label>')}
           </div>
         </div>
       </section>
     `;
     this.updateBoundaryGap();
     root.addEventListener('input', event => {
+      if (event.target.id === 'sand-color') {
+        this.style.setProperty('--sand-color', event.target.value);
+        return;
+      }
       if (event.target.dataset.queue) {
         root.querySelector(`#queue-value-${event.target.dataset.queue}`).value = event.target.value;
         this.ensureEndFunnels();
@@ -652,13 +704,14 @@ class SwanHourglass extends HTMLElement {
     root.querySelector('#gap-value').value = String(gap);
   }
 
-  controls(title, names) {
+  controls(title, names, extra = '') {
     const group = title.toLowerCase().replaceAll(' ', '-');
     return `<details open>
       <summary>${title}</summary>
       <div class="section-body" role="group" aria-label="${title} visibility">
         <div class="control-heading"><button type="button" class="group-toggle" data-group="${group}">Hide all ${title.toLowerCase()}</button></div>
         <div class="buttons">${names.map(name => `<button type="button" data-kind="${group}" data-item="${key(name)}" aria-pressed="true" aria-label="Show ${escapeText(name)}">${escapeText(name)}</button>`).join('')}</div>
+        ${extra}
       </div>
     </details>`;
   }
