@@ -4,7 +4,7 @@ const content = {
   license: 'CC-BY-SA-4.0',
   licenseUrl: 'https://creativecommons.org/licenses/by-sa/4.0/',
   title: '(Black) Swan Hourglass',
-  description: 'Problem space on the left, solution space on the right; idea space above, decision space below. Learning and distilling form the upper ring. Using and changing form the lower ring. Align, bet, release, and listen connect the activities. A green shortcut probes a solution from Distilling to Learning.',
+  description: 'Problem space on the left, solution space on the right; idea space above, decision space below. Learning and distilling form the upper ring. Using and changing form the lower ring. Align, bet, release, and listen connect the activities. A green shortcut probes a solution from Distilling to Learning. Roles: Domain Expert for Learning, Analyst for Distilling, Engineer for Changing, and User for Using.',
   legend: {
     rightThing: 'build the right thing',
     thingRight: 'build the thing right',
@@ -22,6 +22,12 @@ const content = {
     distilling: 'Distilling',
     changing: 'Changing',
     using: 'Using',
+  },
+  roles: {
+    roleLearning: 'Domain Expert',
+    roleDistilling: 'Analyst',
+    roleChanging: 'Engineer',
+    roleUsing: 'User',
   },
   decisionNames: {
     align: { team: 'Define', outside: 'Align' },
@@ -41,8 +47,10 @@ const content = {
 const activities = Object.values(content.activities);
 const transitions = ['align', 'bet', 'release', 'listen'].map(id => content.transitions[id]);
 const shortcuts = ['probe'].map(id => content.transitions[id]);
+const roles = Object.values(content.roles);
 const visibilityGroups = {
   activities,
+  roles,
   transitions,
   'shortcut-transitions': shortcuts,
 };
@@ -52,7 +60,7 @@ const escapeText = text => text
     .replaceAll('>', '&gt;')
     .replaceAll('"', '&quot;');
 const itemKeys = new Map(
-  Object.entries({ ...content.activities, ...content.transitions })
+  Object.entries({ ...content.activities, ...content.transitions, ...content.roles })
       .map(([id, label]) => [label, id]),
 );
 const key = name => itemKeys.get(name);
@@ -97,6 +105,8 @@ class SwanHourglass extends HTMLElement {
         .space { font-size: 19px; font-weight: 700; }
         .pole { font-size: 18px; font-weight: 600; }
         .ring { fill: none; stroke: #7162c9; stroke-width: 13; }
+        .role text { font-size: 15px; fill: #68627e; }
+        .role use { color: #68627e; }
         .activity rect { fill: #7162c9; }
         [data-layer="changing"] .ring { stroke: #0030FF; }
         [data-layer="changing"] rect { fill: #0030FF; }
@@ -138,6 +148,10 @@ class SwanHourglass extends HTMLElement {
           <desc id="diagram-description">${escapeText(content.description)}</desc>
           <metadata><rdf:RDF xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#" xmlns:cc="http://creativecommons.org/ns#"><cc:Work rdf:about=""><cc:license rdf:resource="${escapeText(content.licenseUrl)}" /></cc:Work></rdf:RDF></metadata>
           <defs>
+            <symbol id="person-icon" viewBox="0 0 20 20">
+              <circle cx="10" cy="5" r="3" fill="black" />
+              <path d="M3 18 V16 A7 7 0 0 1 17 16 V18 Z" fill="black" />
+            </symbol>
             <clipPath id="clip-top-left"><rect data-gap-clip="top-left" x="0" y="-20" width="435" height="385" /></clipPath>
             <clipPath id="clip-top-right"><rect data-gap-clip="top-right" x="445" y="-20" width="435" height="385" /></clipPath>
             <clipPath id="clip-bottom-left"><rect data-gap-clip="bottom-left" x="0" y="375" width="435" height="365" /></clipPath>
@@ -175,6 +189,23 @@ class SwanHourglass extends HTMLElement {
             <path class="ring" d="M486 405 A106.633 106.633 0 0 1 455 616" />
             <rect x="589" y="495" width="112" height="31" rx="6" />
             <text class="activity-label" x="645" y="510.5">${escapeText(content.activities.changing)}</text>
+          </g>
+
+          <g data-layer="roleLearning" class="role">
+            <use href="#person-icon" x="162" y="274" width="20" height="20" aria-hidden="true" />
+            <text x="249" y="284">${escapeText(content.roles.roleLearning)}</text>
+          </g>
+          <g data-layer="roleDistilling" class="role">
+            <use href="#person-icon" x="602" y="274" width="20" height="20" aria-hidden="true" />
+            <text x="659" y="284">${escapeText(content.roles.roleDistilling)}</text>
+          </g>
+          <g data-layer="roleUsing" class="role">
+            <use href="#person-icon" x="203" y="535" width="20" height="20" aria-hidden="true" />
+            <text x="249" y="545">${escapeText(content.roles.roleUsing)}</text>
+          </g>
+          <g data-layer="roleChanging" class="role">
+            <use href="#person-icon" x="592" y="535" width="20" height="20" aria-hidden="true" />
+            <text x="659" y="545">${escapeText(content.roles.roleChanging)}</text>
           </g>
 
           <g data-layer="align" class="transition">
@@ -224,6 +255,7 @@ class SwanHourglass extends HTMLElement {
             <p class="hint" id="gap-hint">Cuts a centered gap out of the backgrounds in SVG units. Nothing moves.</p>
           </div>
           ${this.controls('Activities', activities)}
+          ${this.controls('Roles', roles)}
           ${this.controls('Transitions', transitions)}
           ${this.controls('Shortcut transitions', shortcuts)}
           <div role="group" aria-label="Transition decision authority">
