@@ -389,7 +389,7 @@ class SwanHourglass extends HTMLElement {
             <text x="337" y="380">${escapeText(content.transitions.listen)}</text>
           </g>
           <g data-layer="probe" class="transition shortcut">
-            <path d="M486 355 C455.333 359.505 424.667 359.505 394 355" marker-end="url(#green-arrow)" />
+            <path d="M476 355 C452 359.505 428 359.505 404 355" marker-end="url(#green-arrow)" />
             <rect x="402" y="291" width="76" height="31" rx="6" />
             <text x="440" y="307">${escapeText(content.transitions.probe)}</text>
           </g>
