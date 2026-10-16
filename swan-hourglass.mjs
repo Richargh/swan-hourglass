@@ -233,6 +233,9 @@ class SwanHourglass extends HTMLElement {
     const root = this.attachShadow({ mode: 'open' });
     const boundaryColors = Object.fromEntries(Object.entries(boundaryTypes).map(([id, boundary]) => [id, boundary.color]));
     let nextBoundaryNumber = Object.keys(boundaryColors).length + 1;
+    this.boundaryColors = boundaryColors;
+    this.boundaryNames = Object.fromEntries(Object.entries(boundaryTypes).map(([id, boundary]) => [id, boundary.name]));
+    this.activityOwners = Object.fromEntries(boundaryAssignments.map(({ quadrant, owner }) => [quadrant, [owner]]));
     this.workDistance = 0;
     this.workFrame = null;
     this.workLastTime = null;
@@ -325,6 +328,11 @@ class SwanHourglass extends HTMLElement {
         .boundary-colors { display: grid; gap: 8px; }
         .boundary-row { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1.2fr); align-items: center; gap: 10px; font-size: .85rem; }
         .boundary-row select { min-width: 0; width: 100%; }
+        .boundary-picker { position: relative; min-width: 0; border: 1px solid #dcd8eb; border-radius: 8px; padding: 0; background: white; }
+        .boundary-picker summary { padding: 8px; font-weight: 400; letter-spacing: normal; text-transform: none; overflow-wrap: anywhere; }
+        .boundary-options { position: absolute; top: 100%; left: 0; right: 0; z-index: 5; display: grid; gap: 8px; max-height: 220px; overflow-y: auto; padding: 10px; background: white; border: 1px solid #dcd8eb; border-radius: 8px; box-shadow: 0 6px 20px #24204420; }
+        .boundary-options label { display: flex; align-items: center; gap: 8px; font-size: .8rem; }
+        .boundary-options input { margin: 0; flex-shrink: 0; }
         .boundary-color input[type="text"] { min-width: 0; width: 100%; padding: 6px 8px; border: 1px solid #dcd8eb; border-radius: 6px; font: inherit; }
         .boundary-color input[type="color"] { flex-shrink: 0; }
         .boundary-color label { flex: 1; }
@@ -568,11 +576,13 @@ class SwanHourglass extends HTMLElement {
               ${Object.entries(boundaryTypes).map(([id, boundary]) => `<div class="boundary-color" data-boundary-row="${id}">${id === 'organisation' ? `<label for="boundary-color-${id}">${escapeText(boundary.name)}</label>` : `<input type="text" data-boundary-name="${id}" value="${escapeText(boundary.name)}" aria-label="Name for ${escapeText(boundary.name)} boundary">`}<input type="color" id="boundary-color-${id}" data-boundary-color="${id}" value="${boundary.color}" aria-label="Color for ${escapeText(boundary.name)} boundary"><button type="button" data-remove-boundary="${id}" aria-label="Remove ${boundary.name} boundary">−</button></div>`).join('')}
             </div>
             ${boundaryAssignments.map(({ quadrant, activity, owner }) => `<div class="boundary-row">
-              <label for="owner-${quadrant}">${escapeText(content.activities[activity])}</label>
-              <select id="owner-${quadrant}" data-boundary-owner="${quadrant}">
-                ${Object.entries(boundaryTypes).map(([id, boundary]) => `<option value="${id}"${id === owner ? ' selected' : ''}>${boundary.name}</option>`).join('')}
-              </select>
+              <span id="owner-label-${quadrant}">${escapeText(content.activities[activity])}</span>
+              <details class="boundary-picker" data-boundary-picker="${quadrant}">
+                <summary aria-labelledby="owner-label-${quadrant} owner-value-${quadrant}"><span id="owner-value-${quadrant}" data-boundary-summary="${quadrant}">${escapeText(boundaryTypes[owner].name)}</span></summary>
+                <div class="boundary-options" role="group" aria-label="Teams for ${escapeText(content.activities[activity])}"></div>
+              </details>
             </div>`).join('')}
+            <p class="hint">Select multiple teams to show nested boundaries with equal area per team. At least one team must remain selected.</p>
           <div class="boundary-row">
             <label for="background-shape">Boundary shape</label>
             <select id="background-shape">
@@ -604,7 +614,8 @@ class SwanHourglass extends HTMLElement {
           <label class="work-option"><input type="checkbox" id="work-probe">Include Probe detour</label>
         </div>
     `;
-    this.updateBoundaryGap();
+    this.refreshBoundaryPickers();
+    this.renderNestedBoundaries();
     for (const name of ['probe', ...Object.keys(content.flightLevels), 'sandObvious', 'sandEasy', 'sandPossible']) {
       this.setVisible(name, false);
     }
@@ -624,9 +635,8 @@ class SwanHourglass extends HTMLElement {
         const name = event.target.value.trim() || 'Unnamed boundary';
         root.querySelector(`[data-boundary-color="${nameId}"]`).setAttribute('aria-label', `Color for ${name} boundary`);
         root.querySelector(`[data-remove-boundary="${nameId}"]`).setAttribute('aria-label', `Remove ${name} boundary`);
-        for (const select of root.querySelectorAll('[data-boundary-owner]')) {
-          select.querySelector(`option[value="${nameId}"]`).textContent = name;
-        }
+        this.boundaryNames[nameId] = name;
+        this.refreshBoundaryPickers();
         return;
       }
       const owner = event.target.dataset.boundaryColor;
@@ -635,14 +645,22 @@ class SwanHourglass extends HTMLElement {
       for (const shape of root.querySelectorAll(`[data-boundary="${owner}"]`)) {
         shape.setAttribute('fill', boundaryColors[owner]);
       }
+      this.renderNestedBoundaries();
     });
     root.addEventListener('change', event => {
       const quadrant = event.target.dataset.boundaryOwner;
       if (!quadrant) return;
-      const shape = root.querySelector(`[data-quadrant="${quadrant}"]`);
-      shape.dataset.boundary = event.target.value;
-      shape.setAttribute('fill', boundaryColors[event.target.value]);
-      this.updateBoundaryGap();
+      const owners = this.activityOwners[quadrant];
+      const owner = event.target.value;
+      if (event.target.checked) {
+        if (!owners.includes(owner)) owners.push(owner);
+      } else if (owners.length > 1) {
+        this.activityOwners[quadrant] = owners.filter(id => id !== owner);
+      } else {
+        event.target.checked = true;
+      }
+      this.refreshBoundaryPickers(false);
+      this.renderNestedBoundaries();
     });
     root.querySelector('#background-shape').addEventListener('change', event => {
       const paths = event.target.value === 'boxes'
@@ -661,6 +679,7 @@ class SwanHourglass extends HTMLElement {
       for (const background of root.querySelectorAll('[data-quadrant]')) {
         background.setAttribute('d', paths[background.dataset.quadrant]);
       }
+      this.renderNestedBoundaries();
     });
     root.querySelector('#box-gap').addEventListener('input', () => this.updateBoundaryGap());
     root.querySelector('#work-probe').addEventListener('change', () => {
@@ -727,17 +746,14 @@ class SwanHourglass extends HTMLElement {
           shape.dataset.boundary = fallback;
           shape.setAttribute('fill', boundaryColors[fallback]);
         }
-        for (const select of root.querySelectorAll('[data-boundary-owner]')) {
-          if (select.value === id) {
-            select.value = fallback;
-            const shape = root.querySelector(`[data-quadrant="${select.dataset.boundaryOwner}"]`);
-            shape.dataset.boundary = fallback;
-            shape.setAttribute('fill', boundaryColors[fallback]);
-          }
-          select.querySelector(`option[value="${id}"]`).remove();
+        delete this.boundaryNames[id];
+        for (const [quadrant, owners] of Object.entries(this.activityOwners)) {
+          const remaining = owners.filter(owner => owner !== id);
+          this.activityOwners[quadrant] = remaining.length ? remaining : [fallback];
         }
         root.querySelector(`[data-boundary-row="${id}"]`).remove();
-        this.updateBoundaryGap();
+        this.refreshBoundaryPickers();
+        this.renderNestedBoundaries();
         for (const removeButton of root.querySelectorAll('[data-remove-boundary]')) {
           removeButton.disabled = Object.keys(boundaryColors).length === 1;
         }
@@ -748,6 +764,7 @@ class SwanHourglass extends HTMLElement {
         const id = `boundary-${number}`;
         const name = `Boundary ${number}`;
         boundaryColors[id] = '#e4e9f2';
+        this.boundaryNames[id] = name;
         const row = document.createElement('div');
         row.className = 'boundary-color';
         row.dataset.boundaryRow = id;
@@ -768,12 +785,7 @@ class SwanHourglass extends HTMLElement {
         removeButton.textContent = '−';
         row.append(nameInput, colorInput, removeButton);
         root.querySelector('.boundary-colors').append(row);
-        for (const select of root.querySelectorAll('[data-boundary-owner]')) {
-          const option = document.createElement('option');
-          option.value = id;
-          option.textContent = name;
-          select.append(option);
-        }
+        this.refreshBoundaryPickers();
         for (const removeButton of root.querySelectorAll('[data-remove-boundary]')) {
           removeButton.disabled = false;
         }
@@ -1016,11 +1028,57 @@ class SwanHourglass extends HTMLElement {
     }
   }
 
+  refreshBoundaryPickers(rebuild = true) {
+    for (const [quadrant, owners] of Object.entries(this.activityOwners)) {
+      const picker = this.shadowRoot.querySelector(`[data-boundary-picker="${quadrant}"]`);
+      picker.querySelector('[data-boundary-summary]').textContent = owners.map(id => this.boundaryNames[id]).join(', ');
+      if (!rebuild) continue;
+      picker.querySelector('.boundary-options').innerHTML = Object.entries(this.boundaryNames)
+        .map(([id, name]) => `<label><input type="checkbox" data-boundary-owner="${quadrant}" value="${id}"${owners.includes(id) ? ' checked' : ''}>${escapeText(name)}</label>`).join('');
+    }
+  }
+
+  renderNestedBoundaries() {
+    const root = this.shadowRoot;
+    for (const [quadrant, owners] of Object.entries(this.activityOwners)) {
+      const shape = root.querySelector(`[data-quadrant="${quadrant}"]`);
+      let wrapper = root.querySelector(`[data-boundary-shape="${quadrant}"]`);
+      if (!wrapper) {
+        wrapper = document.createElementNS('http://www.w3.org/2000/svg', 'g');
+        wrapper.dataset.boundaryShape = quadrant;
+        wrapper.setAttribute('clip-path', shape.getAttribute('clip-path'));
+        shape.removeAttribute('clip-path');
+        shape.before(wrapper);
+        wrapper.append(shape);
+      }
+      for (const nested of wrapper.querySelectorAll('[data-nested-boundary]')) nested.remove();
+      shape.dataset.boundary = owners[0];
+      shape.dataset.boundaries = owners.join(' ');
+      shape.setAttribute('fill', this.boundaryColors[owners[0]]);
+      const cy = quadrant.startsWith('top') ? 239.5 : 500.5;
+      owners.slice(1).forEach((owner, index) => {
+        // Area scales with the square of the linear scale: equal visible shares.
+        const scale = Math.sqrt((owners.length - index - 1) / owners.length);
+        const nested = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+        nested.dataset.nestedBoundary = owner;
+        nested.dataset.boundary = owner;
+        nested.setAttribute('d', shape.getAttribute('d'));
+        nested.setAttribute('fill', this.boundaryColors[owner]);
+        nested.setAttribute('stroke', 'white');
+        nested.setAttribute('stroke-width', '1.5');
+        nested.setAttribute('vector-effect', 'non-scaling-stroke');
+        nested.setAttribute('transform', `translate(440 ${cy}) scale(${scale}) translate(-440 ${-cy})`);
+        wrapper.append(nested);
+      });
+    }
+    this.updateBoundaryGap();
+  }
+
   updateBoundaryGap() {
     const root = this.shadowRoot;
     const gap = Number(root.querySelector('#box-gap').value);
     const owners = Object.fromEntries(
-      [...root.querySelectorAll('[data-quadrant]')].map(shape => [shape.dataset.quadrant, shape.dataset.boundary]),
+      [...root.querySelectorAll('[data-quadrant]')].map(shape => [shape.dataset.quadrant, (shape.dataset.boundaries || shape.dataset.boundary).split(' ').sort().join('|')]),
     );
     for (const clip of root.querySelectorAll('[data-gap-clip]')) {
       const quadrant = clip.dataset.gapClip;
